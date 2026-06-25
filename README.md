@@ -1,4 +1,4 @@
-# Custom Bluetooth Input
+# Bluetooth-Keyboard-App
 
 这是一个 Android 手机蓝牙 HID 自定义输入设备示例。手机会伪装成一个蓝牙 HID 设备，并支持通过手势发送可配置的输入动作。
 
