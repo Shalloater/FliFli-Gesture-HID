@@ -714,12 +714,7 @@ public class MainActivity extends Activity {
         typeCard.addView(typeList, typeListParams);
 
         addKeyboardTypeRow(typeList, "全屏手势键盘", "可用", true);
-        addKeyboardTypeRow(typeList, "电脑键盘", "可用", true);
-        addKeyboardTypeRow(typeList, "标准手柄", "可用", true);
-        addKeyboardTypeRow(typeList, "Joy-Con", "可用", true);
-        addKeyboardTypeRow(typeList, "Joy-Con (L)", "可用", true);
-        addKeyboardTypeRow(typeList, "Joy-Con (R)", "可用", true);
-        addKeyboardTypeRow(typeList, "数字键盘", "待支持", false);
+        addKeyboardTypeRow(typeList, "电脑键盘", "可用", false);
 
         content.addView(typeCard, new LinearLayout.LayoutParams(-1, -2));
 
@@ -732,23 +727,9 @@ public class MainActivity extends Activity {
                 IconView.ICON_KEYBOARD, Color.rgb(36, 122, 255), true));
         types.add(new PickerItem("电脑键盘", "横屏 QWERTY 键盘布局", "可用",
                 IconView.ICON_KEYBOARD, Color.rgb(36, 122, 255), true));
-        types.add(new PickerItem("标准手柄", "横屏双摇杆布局，适合电脑测试", "可用",
-                IconView.ICON_HEXAGON, Color.rgb(126, 101, 216), true));
-        types.add(new PickerItem("Joy-Con", "横屏一对 Joy-Con 布局", "可用",
-                IconView.ICON_HEXAGON, Color.rgb(36, 122, 255), true));
-        types.add(new PickerItem("Joy-Con (L)", "竖屏左 Joy-Con 布局", "可用",
-                IconView.ICON_HEXAGON, Color.rgb(40, 160, 190), true));
-        types.add(new PickerItem("Joy-Con (R)", "竖屏右 Joy-Con 布局", "可用",
-                IconView.ICON_HEXAGON, Color.rgb(228, 66, 88), true));
-        types.add(new PickerItem("数字键盘", "后续扩展类型", "待支持",
-                IconView.ICON_KEYBOARD, Color.rgb(111, 126, 154), false));
         showStyledChoiceDialog("选择键盘种类", null, types, -1, which -> {
             String type = KEYBOARD_TYPE_FULLSCREEN_GESTURE;
             if (which == 1) type = KEYBOARD_TYPE_COMPUTER;
-            if (which == 2) type = KEYBOARD_TYPE_GAMEPAD;
-            if (which == 3) type = KEYBOARD_TYPE_JOYCON_PAIR;
-            if (which == 4) type = KEYBOARD_TYPE_JOYCON_LEFT;
-            if (which == 5) type = KEYBOARD_TYPE_JOYCON_RIGHT;
             showKeyboardEditor(createNewKeyboardDraft(type), true);
         });
     }
@@ -1935,9 +1916,22 @@ public class MainActivity extends Activity {
     private void ensureKeyboardConfigsInitialized() {
         if (preferences == null || preferences.contains(PREF_KEYBOARDS_JSON)) return;
         List<CustomKeyboardConfig> configs = new ArrayList<>();
-        configs.add(createDefaultKeyboardFromLegacy());
+        configs.add(hasLegacyKeyboardPreferences()
+                ? createDefaultKeyboardFromLegacy()
+                : createReaderPagingKeyboard());
         saveKeyboardConfigs(configs);
         preferences.edit().putInt(PREF_NEXT_KEYBOARD_ID, 2).apply();
+    }
+
+    private boolean hasLegacyKeyboardPreferences() {
+        if (preferences == null) return false;
+        if (preferences.contains(PREF_CONTROL_MODE) || preferences.contains(PREF_VIBRATION_ENABLED)) {
+            return true;
+        }
+        for (String triggerId : GESTURE_TRIGGER_IDS) {
+            if (preferences.contains(PREF_ACTION_PREFIX + triggerId)) return true;
+        }
+        return false;
     }
 
     private List<CustomKeyboardConfig> loadKeyboardConfigs() {
@@ -2183,6 +2177,52 @@ public class MainActivity extends Activity {
         return config;
     }
 
+    private CustomKeyboardConfig createReaderPagingKeyboard() {
+        CustomKeyboardConfig config = new CustomKeyboardConfig();
+        config.id = "keyboard_1";
+        config.name = "阅读器翻页";
+        config.type = KEYBOARD_TYPE_FULLSCREEN_GESTURE;
+        config.controlMode = CONTROL_MODE_FULLSCREEN;
+        config.stickClickMode = STICK_CLICK_MODE_TAP;
+        config.vibrationEnabled = false;
+        config.vibrationLevel = VIBRATION_MEDIUM;
+        config.backgroundImageUri = "";
+
+        addDefaultTapBinding(config, 1, 1, "kb_volume_down");
+        addDefaultTapBinding(config, 1, 2, "kb_volume_up");
+        addDefaultMotionBinding(config, 1, MOTION_SWIPE_UP, "kb_volume_down");
+        addDefaultMotionBinding(config, 1, MOTION_SWIPE_DOWN, "kb_volume_up");
+        addDefaultMotionBinding(config, 1, MOTION_SWIPE_LEFT, "kb_volume_down");
+        addDefaultMotionBinding(config, 1, MOTION_SWIPE_RIGHT, "kb_volume_up");
+        addDefaultMotionBinding(config, 2, MOTION_SWIPE_DOWN, "kb_power");
+        addDefaultMotionBinding(config, 2, MOTION_SWIPE_UP, "kb_power");
+
+        normalizeKeyboardConfig(config);
+        return config;
+    }
+
+    private void addDefaultTapBinding(CustomKeyboardConfig config, int fingers, int tapCount, String actionId) {
+        GestureBinding binding = new GestureBinding();
+        binding.kind = GESTURE_KIND_TAP;
+        binding.fingers = fingers;
+        binding.tapCount = tapCount;
+        binding.area = TAP_AREA_FULL;
+        binding.motion = "";
+        binding.actionId = actionId;
+        config.bindings.add(binding);
+    }
+
+    private void addDefaultMotionBinding(CustomKeyboardConfig config, int fingers, String motion, String actionId) {
+        GestureBinding binding = new GestureBinding();
+        binding.kind = GESTURE_KIND_MOTION;
+        binding.fingers = fingers;
+        binding.tapCount = 0;
+        binding.area = TAP_AREA_FULL;
+        binding.motion = motion;
+        binding.actionId = actionId;
+        config.bindings.add(binding);
+    }
+
     private CustomKeyboardConfig createNewKeyboardDraft(String type) {
         CustomKeyboardConfig config = new CustomKeyboardConfig();
         config.id = allocateKeyboardId();
@@ -2243,11 +2283,7 @@ public class MainActivity extends Activity {
 
     private boolean isKnownKeyboardType(String type) {
         return KEYBOARD_TYPE_FULLSCREEN_GESTURE.equals(type)
-                || KEYBOARD_TYPE_COMPUTER.equals(type)
-                || KEYBOARD_TYPE_GAMEPAD.equals(type)
-                || KEYBOARD_TYPE_JOYCON_PAIR.equals(type)
-                || KEYBOARD_TYPE_JOYCON_LEFT.equals(type)
-                || KEYBOARD_TYPE_JOYCON_RIGHT.equals(type);
+                || KEYBOARD_TYPE_COMPUTER.equals(type);
     }
 
     private boolean isGestureKeyboard(CustomKeyboardConfig config) {

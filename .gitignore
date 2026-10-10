@@ -4,6 +4,7 @@
 build/
 app/build/
 local.properties
+github access token.txt
 *.apk
 *.aab
 .DS_Store
