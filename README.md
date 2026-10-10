@@ -83,7 +83,6 @@ app/build/outputs/apk/debug/CustomBluetoothInput-v1.3.apk
 - 更多组合键
 - 更多媒体键
 - 更多手柄按键
-- 数字键盘、更多手柄布局、Joy-Con 布局
 - 长按、宏、动作序列
 
 ## 给 Codex 的构建提示词

@@ -20,6 +20,10 @@ android {
     }
 }
 
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+}
+
 val appVersionName = android.defaultConfig.versionName ?: "unknown"
 
 tasks.configureEach {

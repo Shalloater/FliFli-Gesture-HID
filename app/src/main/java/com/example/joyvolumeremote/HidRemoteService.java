@@ -53,13 +53,6 @@ public class HidRemoteService extends Service {
     private static final int GAMEPAD_REPORT_ID = 3;
     private static final int GAMEPAD_OUTPUT_REPORT_ID = 4;
     private static final int GAMEPAD_AXIS_CENTER = 128;
-    private static final int HID_MODE_COMBO = 0;
-    private static final int HID_MODE_GAMEPAD_ONLY = 1;
-    private static final int SWITCH_STAGE_NONE = 0;
-    private static final int SWITCH_STAGE_WAIT_DISCONNECT = 1;
-    private static final int SWITCH_STAGE_WAIT_UNREGISTER = 2;
-    private static final int SWITCH_STAGE_WAIT_REGISTER = 3;
-    private static final int SWITCH_STAGE_WAIT_RECONNECT = 4;
 
     private static final byte[] COMBO_HID_REPORT_DESCRIPTOR = new byte[]{
             0x05, 0x01,
@@ -143,51 +136,6 @@ public class HidRemoteService extends Service {
             (byte) 0xC0
     };
 
-    private static final byte[] GAMEPAD_ONLY_HID_REPORT_DESCRIPTOR = new byte[]{
-            0x05, 0x01,
-            0x09, 0x05,
-            (byte) 0xA1, 0x01,
-            (byte) 0x85, 0x03,
-
-            0x05, 0x09,
-            0x19, 0x01,
-            0x29, 0x14,
-            0x15, 0x00,
-            0x25, 0x01,
-            0x75, 0x01,
-            (byte) 0x95, 0x14,
-            (byte) 0x81, 0x02,
-            0x75, 0x04,
-            (byte) 0x95, 0x01,
-            (byte) 0x81, 0x03,
-
-            0x65, 0x00,
-            0x05, 0x01,
-            0x09, 0x30,
-            0x09, 0x31,
-            0x09, 0x32,
-            0x09, 0x33,
-            0x15, (byte) 0x81,
-            0x25, 0x7F,
-            0x75, 0x08,
-            (byte) 0x95, 0x04,
-            (byte) 0x81, 0x02,
-
-            0x05, 0x0F,
-            0x09, 0x21,
-            (byte) 0x85, 0x04,
-            (byte) 0xA1, 0x02,
-            0x09, (byte) 0x97,
-            0x09, 0x70,
-            0x15, 0x00,
-            0x26, (byte) 0xFF, 0x00,
-            0x75, 0x08,
-            (byte) 0x95, 0x02,
-            (byte) 0x91, 0x02,
-            (byte) 0xC0,
-            (byte) 0xC0
-    };
-
     private final IBinder binder = new LocalBinder();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
@@ -200,10 +148,6 @@ public class HidRemoteService extends Service {
     private boolean hidAppRegistered = false;
     private boolean shuttingDown = false;
     private String status = "初始化中...";
-    private int requestedHidMode = HID_MODE_COMBO;
-    private int registeredHidMode = -1;
-    private int switchStage = SWITCH_STAGE_NONE;
-    private BluetoothDevice reconnectTargetDevice;
     private byte[] lastRumbleData = new byte[0];
     private String lastOutputSource = "未收到";
     private int lastOutputReportId = -1;
@@ -238,24 +182,12 @@ public class HidRemoteService extends Service {
             mainHandler.post(() -> {
                 hidAppRegistered = registered;
                 if (registered) {
-                    registeredHidMode = requestedHidMode;
                     setStatus("自定义输入设备已注册，可发送键盘/媒体键/手柄按键。");
-                    if (switchStage == SWITCH_STAGE_WAIT_REGISTER && reconnectTargetDevice != null) {
-                        switchStage = SWITCH_STAGE_WAIT_RECONNECT;
-                        connectToHost(reconnectTargetDevice);
-                    } else {
-                        switchStage = SWITCH_STAGE_NONE;
-                    }
+
                 } else {
-                    registeredHidMode = -1;
                     connectedHost = null;
                     setStatus("HID 设备已注销，正在尝试重新注册...");
-                    if (switchStage == SWITCH_STAGE_WAIT_UNREGISTER || switchStage == SWITCH_STAGE_WAIT_REGISTER) {
-                        switchStage = SWITCH_STAGE_WAIT_REGISTER;
-                        if (!shuttingDown) {
-                            mainHandler.postDelayed(HidRemoteService.this::registerHidApp, 200);
-                        }
-                    } else if (!shuttingDown) {
+                    if (!shuttingDown) {
                         mainHandler.postDelayed(HidRemoteService.this::registerHidApp, 1000);
                     }
                 }
@@ -275,23 +207,6 @@ public class HidRemoteService extends Service {
                 } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
                     if (device != null && device.equals(connectedHost)) {
                         connectedHost = null;
-                    }
-                    if (switchStage == SWITCH_STAGE_WAIT_DISCONNECT) {
-                        switchStage = SWITCH_STAGE_WAIT_UNREGISTER;
-                        if (hidDevice != null && hasBluetoothConnectPermission()) {
-                            try {
-                                hidAppRegistered = false;
-                                hidDevice.unregisterApp();
-                                setStatus("已断开旧连接，正在重注册输入模式...");
-                                return;
-                            } catch (SecurityException e) {
-                                setStatus("重注册输入模式失败：缺少蓝牙权限。");
-                                switchStage = SWITCH_STAGE_NONE;
-                            }
-                        }
-                    } else if (switchStage == SWITCH_STAGE_WAIT_RECONNECT && reconnectTargetDevice != null) {
-                        connectToHost(reconnectTargetDevice);
-                        return;
                     }
                     setStatus("连接已断开。请重新选择已配对设备连接。");
                 }
@@ -361,91 +276,6 @@ public class HidRemoteService extends Service {
 
     public String getStatus() {
         return status;
-    }
-
-    public String getLastRumbleDebugText() {
-        if (lastRumbleData == null || lastRumbleData.length == 0) {
-            return "未收到";
-        }
-        StringBuilder builder = new StringBuilder();
-        builder.append(lastOutputSource).append(" ID ").append(lastOutputReportId).append(" : ");
-        int limit = Math.min(lastRumbleData.length, 8);
-        for (int i = 0; i < limit; i++) {
-            if (i > 0) builder.append(' ');
-            builder.append(String.format("%02X", lastRumbleData[i] & 0xFF));
-        }
-        if (lastRumbleData.length > limit) {
-            builder.append(" ...");
-        }
-        return builder.toString();
-    }
-
-    public void setPreferredHidMode(boolean gamepadOnly) {
-        int desiredMode = gamepadOnly ? HID_MODE_GAMEPAD_ONLY : HID_MODE_COMBO;
-        requestedHidMode = desiredMode;
-        if (hidDevice == null) {
-            connectHidProfile();
-            return;
-        }
-        if (!hasBluetoothConnectPermission()) {
-            return;
-        }
-        if (!hidAppRegistered) {
-            registerHidApp();
-            return;
-        }
-        if (registeredHidMode == desiredMode) {
-            return;
-        }
-        try {
-            sendAllReleasedState();
-            hidAppRegistered = false;
-            connectedHost = null;
-            hidDevice.unregisterApp();
-            setStatus(gamepadOnly ? "正在切换为纯手柄模式..." : "正在切换为组合输入模式...");
-        } catch (SecurityException e) {
-            setStatus("切换输入模式失败：缺少蓝牙权限。");
-        }
-    }
-
-    public boolean switchHidModeAndReconnect(BluetoothDevice device, boolean gamepadOnly) {
-        if (device == null) {
-            setStatus("没有可用于切换模式的目标设备。");
-            return false;
-        }
-        requestedHidMode = gamepadOnly ? HID_MODE_GAMEPAD_ONLY : HID_MODE_COMBO;
-        reconnectTargetDevice = device;
-        if (hidDevice == null) {
-            switchStage = SWITCH_STAGE_WAIT_REGISTER;
-            connectHidProfile();
-            return true;
-        }
-        if (!hasBluetoothConnectPermission()) {
-            setStatus("切换输入模式失败：缺少蓝牙权限。");
-            return false;
-        }
-        if (connectedHost != null && connectedHost.equals(device)) {
-            switchStage = SWITCH_STAGE_WAIT_DISCONNECT;
-            disconnectHost();
-            return true;
-        }
-        if (hidAppRegistered) {
-            switchStage = SWITCH_STAGE_WAIT_UNREGISTER;
-            try {
-                sendAllReleasedState();
-                hidAppRegistered = false;
-                hidDevice.unregisterApp();
-                setStatus(gamepadOnly ? "正在切换为纯手柄模式..." : "正在切换为组合输入模式...");
-                return true;
-            } catch (SecurityException e) {
-                setStatus("切换输入模式失败：缺少蓝牙权限。");
-                switchStage = SWITCH_STAGE_NONE;
-                return false;
-            }
-        }
-        switchStage = SWITCH_STAGE_WAIT_REGISTER;
-        registerHidApp();
-        return true;
     }
 
     public boolean isHidAppRegistered() {
@@ -565,19 +395,6 @@ public class HidRemoteService extends Service {
                     setStatus("当前手势未绑定任何输出。");
                     break;
             }
-        } catch (SecurityException e) {
-            setStatus("发送失败：缺少蓝牙权限。");
-        }
-    }
-
-    public void sendGamepadState(int buttons, int hat, int lx, int ly, int rx, int ry, int lt, int rt) {
-        if (hidDevice == null || connectedHost == null || !hasBluetoothConnectPermission()) {
-            setStatus("尚未连接目标设备。先配对并连接电脑、电视、平板等 HID 主机。");
-            return;
-        }
-        try {
-            hidDevice.sendReport(connectedHost, GAMEPAD_REPORT_ID,
-                    buildGamepadReport(buttons, hat, lx, ly, rx, ry, lt, rt));
         } catch (SecurityException e) {
             setStatus("发送失败：缺少蓝牙权限。");
         }
@@ -754,10 +571,8 @@ public class HidRemoteService extends Service {
             return;
         }
         try {
-            if (registeredHidMode == HID_MODE_COMBO) {
-                hidDevice.sendReport(connectedHost, KEYBOARD_REPORT_ID, buildKeyboardReport(0, null));
-                hidDevice.sendReport(connectedHost, CONSUMER_REPORT_ID, new byte[]{0x00, 0x00});
-            }
+            hidDevice.sendReport(connectedHost, KEYBOARD_REPORT_ID, buildKeyboardReport(0, null));
+            hidDevice.sendReport(connectedHost, CONSUMER_REPORT_ID, new byte[]{0x00, 0x00});
             hidDevice.sendReport(connectedHost, GAMEPAD_REPORT_ID,
                     buildGamepadReport(0, 8, GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER,
                             GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER, 0, 0));
@@ -769,16 +584,12 @@ public class HidRemoteService extends Service {
         if (hidDevice == null || !hasBluetoothConnectPermission() || shuttingDown) {
             return;
         }
-        boolean gamepadOnly = requestedHidMode == HID_MODE_GAMEPAD_ONLY;
-        byte subclass = gamepadOnly
-                ? (byte) BluetoothHidDevice.SUBCLASS2_GAMEPAD
-                : (byte) (BluetoothHidDevice.SUBCLASS1_COMBO | BluetoothHidDevice.SUBCLASS2_GAMEPAD);
         BluetoothHidDeviceAppSdpSettings sdp = new BluetoothHidDeviceAppSdpSettings(
-                gamepadOnly ? "Bluetooth Gamepad" : "Bluetooth Input Device",
-                gamepadOnly ? "Standard HID gamepad" : "Bluetooth keyboard, media control and standard gamepad",
+                "Bluetooth Input Device",
+                "Bluetooth keyboard, media control and standard gamepad",
                 "OpenAI",
-                subclass,
-                gamepadOnly ? GAMEPAD_ONLY_HID_REPORT_DESCRIPTOR : COMBO_HID_REPORT_DESCRIPTOR
+                (byte) (BluetoothHidDevice.SUBCLASS1_COMBO | BluetoothHidDevice.SUBCLASS2_GAMEPAD),
+                COMBO_HID_REPORT_DESCRIPTOR
         );
         try {
             boolean sent = hidDevice.registerApp(sdp, null, null, callbackExecutor, hidCallback);
@@ -808,7 +619,6 @@ public class HidRemoteService extends Service {
         hidDevice = null;
         connectedHost = null;
         hidAppRegistered = false;
-        registeredHidMode = -1;
     }
 
     private void handleOutputReport(BluetoothDevice device, byte reportId, byte[] data, String source) {
