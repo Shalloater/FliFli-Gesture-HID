@@ -10,8 +10,7 @@ final class HidAction {
     enum OutputType {
         NONE,
         KEYBOARD,
-        CONSUMER,
-        GAMEPAD
+        CONSUMER
     }
 
     static final int MOD_LEFT_CTRL = 0x01;
@@ -47,26 +46,6 @@ final class HidAction {
     static final int CONSUMER_VOLUME_UP = 0x00E9;
     static final int CONSUMER_VOLUME_DOWN = 0x00EA;
 
-    static final int GAMEPAD_BUTTON_A = 1 << 0;
-    static final int GAMEPAD_BUTTON_B = 1 << 1;
-    static final int GAMEPAD_BUTTON_X = 1 << 2;
-    static final int GAMEPAD_BUTTON_Y = 1 << 3;
-    static final int GAMEPAD_BUTTON_L1 = 1 << 4;
-    static final int GAMEPAD_BUTTON_R1 = 1 << 5;
-    static final int GAMEPAD_BUTTON_L2 = 1 << 6;
-    static final int GAMEPAD_BUTTON_R2 = 1 << 7;
-    static final int GAMEPAD_BUTTON_MINUS = 1 << 8;
-    static final int GAMEPAD_BUTTON_PLUS = 1 << 9;
-    static final int GAMEPAD_BUTTON_L3 = 1 << 10;
-    static final int GAMEPAD_BUTTON_R3 = 1 << 11;
-    static final int GAMEPAD_BUTTON_DPAD_UP = 1 << 12;
-    static final int GAMEPAD_BUTTON_DPAD_DOWN = 1 << 13;
-    static final int GAMEPAD_BUTTON_DPAD_LEFT = 1 << 14;
-    static final int GAMEPAD_BUTTON_DPAD_RIGHT = 1 << 15;
-    static final int GAMEPAD_BUTTON_HOME = 1 << 16;
-    static final int GAMEPAD_BUTTON_CAPTURE = 1 << 17;
-    static final int GAMEPAD_BUTTON_SL = 1 << 18;
-    static final int GAMEPAD_BUTTON_SR = 1 << 19;
 
     static final class ActionDefinition {
         final String id;
@@ -76,7 +55,6 @@ final class HidAction {
         final int modifierMask;
         final int[] keyboardUsages;
         final int consumerUsage;
-        final int gamepadButtons;
 
         ActionDefinition(
                 String id,
@@ -85,8 +63,7 @@ final class HidAction {
                 OutputType outputType,
                 int modifierMask,
                 int[] keyboardUsages,
-                int consumerUsage,
-                int gamepadButtons
+                int consumerUsage
         ) {
             this.id = id;
             this.category = category;
@@ -95,7 +72,6 @@ final class HidAction {
             this.modifierMask = modifierMask;
             this.keyboardUsages = keyboardUsages == null ? new int[0] : keyboardUsages.clone();
             this.consumerUsage = consumerUsage;
-            this.gamepadButtons = gamepadButtons;
         }
     }
 
@@ -137,22 +113,6 @@ final class HidAction {
         actions.add(consumer("consumer_next", "媒体键", "下一曲", CONSUMER_SCAN_NEXT));
         actions.add(consumer("consumer_prev", "媒体键", "上一曲", CONSUMER_SCAN_PREV));
 
-        actions.add(gamepad("gamepad_a", "手柄", "A", GAMEPAD_BUTTON_A));
-        actions.add(gamepad("gamepad_b", "手柄", "B", GAMEPAD_BUTTON_B));
-        actions.add(gamepad("gamepad_x", "手柄", "X", GAMEPAD_BUTTON_X));
-        actions.add(gamepad("gamepad_y", "手柄", "Y", GAMEPAD_BUTTON_Y));
-        actions.add(gamepad("gamepad_l1", "手柄", "L / LB", GAMEPAD_BUTTON_L1));
-        actions.add(gamepad("gamepad_r1", "手柄", "R / RB", GAMEPAD_BUTTON_R1));
-        actions.add(gamepad("gamepad_l2", "手柄", "ZL / LT", GAMEPAD_BUTTON_L2));
-        actions.add(gamepad("gamepad_r2", "手柄", "ZR / RT", GAMEPAD_BUTTON_R2));
-        actions.add(gamepad("gamepad_select", "手柄", "- / Select", GAMEPAD_BUTTON_MINUS));
-        actions.add(gamepad("gamepad_start", "手柄", "+ / Start", GAMEPAD_BUTTON_PLUS));
-        actions.add(gamepad("gamepad_l3", "手柄", "左摇杆按下", GAMEPAD_BUTTON_L3));
-        actions.add(gamepad("gamepad_r3", "手柄", "右摇杆按下", GAMEPAD_BUTTON_R3));
-        actions.add(gamepad("gamepad_home", "手柄", "Home", GAMEPAD_BUTTON_HOME));
-        actions.add(gamepad("gamepad_capture", "手柄", "Capture", GAMEPAD_BUTTON_CAPTURE));
-        actions.add(gamepad("gamepad_sl", "手柄", "SL", GAMEPAD_BUTTON_SL));
-        actions.add(gamepad("gamepad_sr", "手柄", "SR", GAMEPAD_BUTTON_SR));
 
         ACTIONS = Collections.unmodifiableList(actions);
 
@@ -180,18 +140,15 @@ final class HidAction {
     }
 
     private static ActionDefinition none(String id, String label) {
-        return new ActionDefinition(id, "空动作", label, OutputType.NONE, 0, null, 0, 0);
+        return new ActionDefinition(id, "空动作", label, OutputType.NONE, 0, null, 0);
     }
 
     private static ActionDefinition keyboard(String id, String category, String label, int modifierMask, int... keys) {
-        return new ActionDefinition(id, category, label, OutputType.KEYBOARD, modifierMask, keys, 0, 0);
+        return new ActionDefinition(id, category, label, OutputType.KEYBOARD, modifierMask, keys, 0);
     }
 
     private static ActionDefinition consumer(String id, String category, String label, int usage) {
-        return new ActionDefinition(id, category, label, OutputType.CONSUMER, 0, null, usage, 0);
+        return new ActionDefinition(id, category, label, OutputType.CONSUMER, 0, null, usage);
     }
 
-    private static ActionDefinition gamepad(String id, String category, String label, int buttonMask) {
-        return new ActionDefinition(id, category, label, OutputType.GAMEPAD, 0, null, 0, buttonMask);
-    }
 }

@@ -50,9 +50,6 @@ public class HidRemoteService extends Service {
 
     private static final int KEYBOARD_REPORT_ID = 1;
     private static final int CONSUMER_REPORT_ID = 2;
-    private static final int GAMEPAD_REPORT_ID = 3;
-    private static final int GAMEPAD_OUTPUT_REPORT_ID = 4;
-    private static final int GAMEPAD_AXIS_CENTER = 128;
 
     private static final byte[] COMBO_HID_REPORT_DESCRIPTOR = new byte[]{
             0x05, 0x01,
@@ -92,48 +89,6 @@ public class HidRemoteService extends Service {
             (byte) 0x81, 0x00,
             (byte) 0xC0,
 
-            0x05, 0x01,
-            0x09, 0x05,
-            (byte) 0xA1, 0x01,
-            (byte) 0x85, 0x03,
-
-            0x05, 0x09,
-            0x19, 0x01,
-            0x29, 0x14,
-            0x15, 0x00,
-            0x25, 0x01,
-            0x75, 0x01,
-            (byte) 0x95, 0x14,
-            (byte) 0x81, 0x02,
-
-            0x75, 0x04,
-            (byte) 0x95, 0x01,
-            (byte) 0x81, 0x03,
-
-            0x65, 0x00,
-            0x09, 0x30,
-            0x09, 0x31,
-            0x09, 0x32,
-            0x09, 0x33,
-            0x15, (byte) 0x81,
-            0x25, 0x7F,
-            0x75, 0x08,
-            (byte) 0x95, 0x04,
-            (byte) 0x81, 0x02,
-
-            (byte) 0x85, 0x04,
-            0x05, 0x0F,
-            0x09, 0x21,
-            (byte) 0xA1, 0x02,
-            0x09, (byte) 0x97,
-            0x09, 0x70,
-            0x15, 0x00,
-            0x26, (byte) 0xFF, 0x00,
-            0x75, 0x08,
-            (byte) 0x95, 0x02,
-            (byte) 0x91, 0x02,
-            (byte) 0xC0,
-            (byte) 0xC0
     };
 
     private final IBinder binder = new LocalBinder();
@@ -182,7 +137,7 @@ public class HidRemoteService extends Service {
             mainHandler.post(() -> {
                 hidAppRegistered = registered;
                 if (registered) {
-                    setStatus("自定义输入设备已注册，可发送键盘/媒体键/手柄按键。");
+                    setStatus("自定义输入设备已注册，可发送键盘和媒体键。");
 
                 } else {
                     connectedHost = null;
@@ -388,9 +343,6 @@ public class HidRemoteService extends Service {
                 case CONSUMER:
                     sendConsumerAction(action);
                     break;
-                case GAMEPAD:
-                    sendGamepadAction(action);
-                    break;
                 default:
                     setStatus("当前手势未绑定任何输出。");
                     break;
@@ -448,114 +400,17 @@ public class HidRemoteService extends Service {
         mainHandler.postDelayed(() -> sendRelease(CONSUMER_REPORT_ID, release), 35);
     }
 
-    private void sendGamepadAction(HidAction.ActionDefinition action) {
-        byte[] press = buildGamepadReport(action.gamepadButtons, 8,
-                GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER, 0, 0);
-        byte[] release = buildGamepadReport(0, 8,
-                GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER, 0, 0);
-        hidDevice.sendReport(connectedHost, GAMEPAD_REPORT_ID, press);
-        setStatus("已发送：" + action.label);
-        mainHandler.postDelayed(() -> sendRelease(GAMEPAD_REPORT_ID, release), 35);
-    }
 
-    private byte[] buildGamepadReport(int buttons, int hat, int lx, int ly, int rx, int ry, int lt, int rt) {
-        int reportButtons = mapInternalButtonsToReportButtons(buttons, hat, lt, rt);
-        return new byte[]{
-                (byte) (reportButtons & 0xFF),
-                (byte) ((reportButtons >> 8) & 0xFF),
-                (byte) ((reportButtons >> 16) & 0x0F),
-                (byte) toSignedAxisByte(lx),
-                (byte) toSignedAxisByte(ly),
-                (byte) toSignedAxisByte(rx),
-                (byte) toSignedAxisByte(ry)
-        };
-    }
 
-    private int toSignedAxisByte(int value) {
-        int clamped = clamp(value, 0, 255);
-        return clamp(clamped - GAMEPAD_AXIS_CENTER, -127, 127);
-    }
 
-    private int mapInternalButtonsToReportButtons(int buttons, int hat, int lt, int rt) {
-        int reportButtons = 0;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_A) != 0) reportButtons |= 1 << 0;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_B) != 0) reportButtons |= 1 << 1;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_X) != 0) reportButtons |= 1 << 2;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_Y) != 0) reportButtons |= 1 << 3;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_L1) != 0) reportButtons |= 1 << 4;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_R1) != 0) reportButtons |= 1 << 5;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_L2) != 0 || lt > 0) reportButtons |= 1 << 6;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_R2) != 0 || rt > 0) reportButtons |= 1 << 7;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_MINUS) != 0) reportButtons |= 1 << 8;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_PLUS) != 0) reportButtons |= 1 << 9;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_L3) != 0) reportButtons |= 1 << 10;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_R3) != 0) reportButtons |= 1 << 11;
-        int dpadButtons = buttonsFromHat(hat == 8 ? deriveHatFromButtons(buttons) : hat);
-        if ((buttons & HidAction.GAMEPAD_BUTTON_DPAD_UP) != 0
-                || (dpadButtons & HidAction.GAMEPAD_BUTTON_DPAD_UP) != 0) {
-            reportButtons |= 1 << 12;
-        }
-        if ((buttons & HidAction.GAMEPAD_BUTTON_DPAD_DOWN) != 0
-                || (dpadButtons & HidAction.GAMEPAD_BUTTON_DPAD_DOWN) != 0) {
-            reportButtons |= 1 << 13;
-        }
-        if ((buttons & HidAction.GAMEPAD_BUTTON_DPAD_LEFT) != 0
-                || (dpadButtons & HidAction.GAMEPAD_BUTTON_DPAD_LEFT) != 0) {
-            reportButtons |= 1 << 14;
-        }
-        if ((buttons & HidAction.GAMEPAD_BUTTON_DPAD_RIGHT) != 0
-                || (dpadButtons & HidAction.GAMEPAD_BUTTON_DPAD_RIGHT) != 0) {
-            reportButtons |= 1 << 15;
-        }
-        if ((buttons & HidAction.GAMEPAD_BUTTON_HOME) != 0) reportButtons |= 1 << 16;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_CAPTURE) != 0) reportButtons |= 1 << 17;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_SL) != 0) reportButtons |= 1 << 18;
-        if ((buttons & HidAction.GAMEPAD_BUTTON_SR) != 0) reportButtons |= 1 << 19;
-        return reportButtons;
-    }
 
-    private int buttonsFromHat(int hat) {
-        switch (hat) {
-            case 0:
-                return HidAction.GAMEPAD_BUTTON_DPAD_UP;
-            case 1:
-                return HidAction.GAMEPAD_BUTTON_DPAD_UP | HidAction.GAMEPAD_BUTTON_DPAD_RIGHT;
-            case 2:
-                return HidAction.GAMEPAD_BUTTON_DPAD_RIGHT;
-            case 3:
-                return HidAction.GAMEPAD_BUTTON_DPAD_RIGHT | HidAction.GAMEPAD_BUTTON_DPAD_DOWN;
-            case 4:
-                return HidAction.GAMEPAD_BUTTON_DPAD_DOWN;
-            case 5:
-                return HidAction.GAMEPAD_BUTTON_DPAD_DOWN | HidAction.GAMEPAD_BUTTON_DPAD_LEFT;
-            case 6:
-                return HidAction.GAMEPAD_BUTTON_DPAD_LEFT;
-            case 7:
-                return HidAction.GAMEPAD_BUTTON_DPAD_LEFT | HidAction.GAMEPAD_BUTTON_DPAD_UP;
-            default:
-                return 0;
-        }
-    }
 
-    private int deriveHatFromButtons(int buttons) {
-        boolean up = (buttons & HidAction.GAMEPAD_BUTTON_DPAD_UP) != 0;
-        boolean down = (buttons & HidAction.GAMEPAD_BUTTON_DPAD_DOWN) != 0;
-        boolean left = (buttons & HidAction.GAMEPAD_BUTTON_DPAD_LEFT) != 0;
-        boolean right = (buttons & HidAction.GAMEPAD_BUTTON_DPAD_RIGHT) != 0;
-        if (up && right) return 1;
-        if (right && down) return 3;
-        if (down && left) return 5;
-        if (left && up) return 7;
-        if (up) return 0;
-        if (right) return 2;
-        if (down) return 4;
-        if (left) return 6;
-        return 8;
-    }
 
-    private int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
-    }
+
+
+
+
+
 
     private void sendRelease(int reportId, byte[] release) {
         try {
@@ -573,9 +428,6 @@ public class HidRemoteService extends Service {
         try {
             hidDevice.sendReport(connectedHost, KEYBOARD_REPORT_ID, buildKeyboardReport(0, null));
             hidDevice.sendReport(connectedHost, CONSUMER_REPORT_ID, new byte[]{0x00, 0x00});
-            hidDevice.sendReport(connectedHost, GAMEPAD_REPORT_ID,
-                    buildGamepadReport(0, 8, GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER,
-                            GAMEPAD_AXIS_CENTER, GAMEPAD_AXIS_CENTER, 0, 0));
         } catch (SecurityException ignored) {
         }
     }
@@ -586,9 +438,9 @@ public class HidRemoteService extends Service {
         }
         BluetoothHidDeviceAppSdpSettings sdp = new BluetoothHidDeviceAppSdpSettings(
                 "Bluetooth Input Device",
-                "Bluetooth keyboard, media control and standard gamepad",
+                "Bluetooth keyboard and media control",
                 "OpenAI",
-                (byte) (BluetoothHidDevice.SUBCLASS1_COMBO | BluetoothHidDevice.SUBCLASS2_GAMEPAD),
+                BluetoothHidDevice.SUBCLASS1_COMBO,
                 COMBO_HID_REPORT_DESCRIPTOR
         );
         try {
@@ -633,15 +485,7 @@ public class HidRemoteService extends Service {
         if (containsNonZeroByte(data)) {
             applyPhoneRumble(data);
             setStatus("已接收主机输出报告（" + source + "，ID " + (reportId & 0xFF) + "，" + data.length + " 字节）。");
-        } else if (reportId == GAMEPAD_OUTPUT_REPORT_ID
-                || looksLikeSimpleRumblePacket(data)) {
-            cancelPhoneRumble();
-            setStatus("已接收主机停止震动报告（" + source + "，ID " + (reportId & 0xFF) + "）。");
         }
-    }
-
-    private boolean looksLikeSimpleRumblePacket(byte[] data) {
-        return data != null && data.length >= 2 && data.length <= 8;
     }
 
     private boolean containsNonZeroByte(byte[] data) {

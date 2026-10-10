@@ -1184,8 +1184,6 @@ public class MainActivity extends Activity {
                 return IconView.ICON_KEYBOARD;
             case CONSUMER:
                 return IconView.ICON_PLAY;
-            case GAMEPAD:
-                return IconView.ICON_HEXAGON;
             case NONE:
             default:
                 return IconView.ICON_CHEVRON;
@@ -1200,8 +1198,6 @@ public class MainActivity extends Activity {
                 return Color.rgb(36, 122, 255);
             case CONSUMER:
                 return Color.rgb(22, 155, 114);
-            case GAMEPAD:
-                return Color.rgb(126, 101, 216);
             case NONE:
             default:
                 return Color.rgb(111, 126, 154);
