@@ -59,7 +59,7 @@ build_apk.bat
 构建成功后，APK 在：
 
 ```text
-app/build/outputs/apk/debug/CustomBluetoothInput-v1.3.apk
+app/build/outputs/apk/debug/CustomBluetoothInput-v1.4.apk
 ```
 
 应用显示名称为“自定义蓝牙输入”。每次发布功能更新时，同时递增 `versionCode` 和 `versionName`，并按新版本号生成安装包文件名。
