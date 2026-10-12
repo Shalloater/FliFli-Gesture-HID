@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "JoyVolumeRemote"
+rootProject.name = "FliFli Gesture HID"
 include(":app")

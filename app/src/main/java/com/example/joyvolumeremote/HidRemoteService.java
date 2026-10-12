@@ -437,9 +437,9 @@ public class HidRemoteService extends Service {
             return;
         }
         BluetoothHidDeviceAppSdpSettings sdp = new BluetoothHidDeviceAppSdpSettings(
-                "Bluetooth Input Device",
-                "Bluetooth keyboard and media control",
-                "OpenAI",
+                "FliFli Gesture HID",
+                "Bluetooth gesture keyboard and media control",
+                "FliFli",
                 BluetoothHidDevice.SUBCLASS1_COMBO,
                 COMBO_HID_REPORT_DESCRIPTOR
         );

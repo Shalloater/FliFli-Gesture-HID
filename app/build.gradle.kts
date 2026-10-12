@@ -31,7 +31,7 @@ tasks.configureEach {
         doLast {
             val sourceApk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
             val namedApk = layout.buildDirectory
-                    .file("outputs/apk/debug/FliFli-v$appVersionName.apk")
+                    .file("outputs/apk/debug/FliFli-Gesture-HID-v$appVersionName.apk")
                     .get()
                     .asFile
             if (sourceApk.exists()) {
