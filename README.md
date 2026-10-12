@@ -81,7 +81,6 @@ app/build/outputs/apk/debug/FliFli-v1.4.apk
 - 更多键盘按键
 - 更多组合键
 - 更多媒体键
-- 更多手柄按键
 - 长按、宏、动作序列
 
 ## 给 Codex 的构建提示词
