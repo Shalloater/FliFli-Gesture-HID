@@ -58,10 +58,10 @@ build_apk.bat
 构建成功后，APK 在：
 
 ```text
-app/build/outputs/apk/debug/CustomBluetoothInput-v1.4.apk
+app/build/outputs/apk/debug/FliFli-v1.4.apk
 ```
 
-应用显示名称为“自定义蓝牙输入”。每次发布功能更新时，同时递增 `versionCode` 和 `versionName`，并按新版本号生成安装包文件名。
+应用显示名称为“翻翻”。每次发布功能更新时，同时递增 `versionCode` 和 `versionName`，并按新版本号生成 `FliFli-v版本号.apk` 安装包文件名。
 
 ## 使用步骤
 

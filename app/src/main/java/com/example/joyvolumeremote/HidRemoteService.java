@@ -577,7 +577,7 @@ public class HidRemoteService extends Service {
 
         return new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher)
-                .setContentTitle("自定义蓝牙输入")
+                .setContentTitle("翻翻")
                 .setContentText(status)
                 .setContentIntent(openPendingIntent)
                 .setOngoing(true)

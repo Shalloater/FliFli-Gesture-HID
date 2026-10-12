@@ -9,4 +9,4 @@
 7. 请检查 AndroidManifest.xml、build.gradle.kts、MainActivity.java 是否能编译。
 8. 如有编译错误，请直接修复。
 9. 执行 assembleDebug。
-10. 构建成功后告诉我 APK 路径：app/build/outputs/apk/debug/app-debug.apk。
+10. 构建成功后告诉我 APK 路径：app/build/outputs/apk/debug/FliFli-v1.4.apk。

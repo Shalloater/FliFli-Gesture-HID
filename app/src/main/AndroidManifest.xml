@@ -14,8 +14,8 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:label="自定义蓝牙输入"
+        android:icon="@drawable/ic_launcher_fanfan"
+        android:label="翻翻"
         android:theme="@style/AppTheme">
         <service
             android:name=".HidRemoteService"
