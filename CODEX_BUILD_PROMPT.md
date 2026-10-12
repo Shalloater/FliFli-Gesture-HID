@@ -9,4 +9,4 @@
 7. 请检查 AndroidManifest.xml、build.gradle.kts、MainActivity.java 及相关 HID/手势代码是否能编译。
 8. 如有编译错误，请直接修复；不要添加与当前需求无关的功能或依赖。
 9. 执行 `./gradlew test assembleDebug`（Windows 可使用 `gradlew.bat test assembleDebug`）。
-10. 构建成功后确认 APK 路径：`app/build/outputs/apk/debug/FliFli-Gesture-HID-v1.4.apk`。
+10. 构建成功后确认 APK 路径：`app/build/outputs/apk/debug/FliFli-Gesture-HID-v1.4.0.apk`。
