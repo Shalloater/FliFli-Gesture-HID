@@ -70,10 +70,10 @@ build_apk.bat
 构建成功后，APK 在：
 
 ```text
-app/build/outputs/apk/debug/FliFli-Gesture-HID-v1.5.4.apk
+app/build/outputs/apk/debug/FliFli-v1.5.4.apk
 ```
 
-应用显示名称为“翻翻”。公开项目名为“FliFli Gesture HID”。每次发布功能更新时，同时递增 `versionCode` 和 `versionName`，并按新版本号生成 `FliFli-Gesture-HID-v版本号.apk` 安装包文件名。
+应用显示名称为“翻翻”。公开项目名为“FliFli Gesture HID”。每次发布功能更新时，同时递增 `versionCode` 和 `versionName`，并按新版本号生成 `FliFli-v版本号.apk` 安装包文件名。
 
 ## 使用步骤
 
