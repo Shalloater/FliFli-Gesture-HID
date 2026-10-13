@@ -2,6 +2,18 @@
 
 “翻翻 · 蓝牙手势键盘”是一个 Android 手机蓝牙 HID 自定义输入app。手机会伪装成一个蓝牙 HID 设备，并支持通过手势发送可配置的输入动作。
 
+## 下载与安装
+
+前往 [最新版下载页面](https://github.com/Shalloater/FliFli-Gesture-HID/releases/latest)，在 Assets 中下载 `FliFli-v版本号.apk`，然后在 Android 手机上安装。
+
+## 宣传图
+
+![翻翻：蓝牙手势键盘、使用场景、手势输入、自定义配置与触摸背景](promo/overview-v2.jpg)
+
+图中的设备和配置卡片为功能示意。[查看完整宣传图](promo/README.md)。
+
+## 支持的输入
+
 当前支持的输出类型：
 
 - 键盘按键，如 `A`、`B`、`Page Up`、`Page Down`
@@ -47,32 +59,6 @@
 - 手机系统支持 `BluetoothHidDevice`
 - Android 12 或以上需要授予“附近设备/蓝牙”权限
 
-## 构建 APK
-
-### Windows
-
-在项目根目录运行：
-
-```bat
-build_apk.bat
-```
-
-### macOS / Linux
-
-在项目根目录运行：
-
-```bash
-./build_apk.sh
-```
-
-构建成功后，APK 在：
-
-```text
-app/build/outputs/apk/debug/FliFli-v1.5.4.apk
-```
-
-应用显示名称为“翻翻”。公开项目名为“FliFli Gesture HID”。每次发布功能更新时，同时递增 `versionCode` 和 `versionName`，并按新版本号生成 `FliFli-v版本号.apk` 安装包文件名。
-
 ## 使用步骤
 
 1. 安装并打开 App。
@@ -83,22 +69,3 @@ app/build/outputs/apk/debug/FliFli-v1.5.4.apk
 6. 进入设置页，新增或编辑自定义键盘。
 7. 进入底部“首页”，选择已配置的键盘运行；也可以直接添加键盘。
 8. 使用点按、滑动或画圈手势发送该键盘配置的 HID 输入。
-
-## 界面验证
-
-构建及检查：`gradlew.bat testDebugUnitTest assembleDebug lintDebug`（macOS / Linux 使用 `./gradlew`）。需要 JDK 17 和 Android SDK 35；可通过 `GRADLE_USER_HOME` 指定 Gradle 缓存目录。
-
-安装 debug APK 到测试模拟器后运行 `python tools/ui_smoke_test.py emulator-5556`，检查五种语言、五种皮肤及启动入口、重启后的偏好和小屏大字体显示。两个 UI 脚本目前使用 `D:/Android/Sdk/platform-tools/adb.exe`，其他环境需先将脚本内的 ADB 路径改为本机路径，并指定实际模拟器序列号。该脚本会改变测试设备内本应用的皮肤、语言与显示设置，请仅用于测试模拟器。截图、UI 树和结果写入 `app/build/ui-review/`。单页检查可使用 `python tools/ui_review.py capture screenshot-name --serial emulator-5556`。
-
-模拟器用于界面验证；HID 连接和按键发送需要具备 Bluetooth HID Device 支持的真实 Android 手机与主机联测。
-
-皮肤采用天空蓝、樱花粉、浅紫、薄荷绿和柔和石墨灰；浅色按钮配深色文字。图标原图为 `app/src/main/res/drawable-nodpi/ic_launcher_fanfan.png`，保持原文件不变。运行 `java tools/RecolorLauncherIcons.java` 可生成五种配色：以原图调色、提亮并降低浓烈感，黑色按亮度转为灰阶，均保留原始像素位置、波浪图案、透明度和中性色背景。
-
-## 关于后续扩展
-
-当前版本已经把动作层和 HID 发送层拆开，后续可以继续扩展：
-
-- 更多键盘按键
-- 更多组合键
-- 更多媒体键
-- 长按、宏、动作序列
