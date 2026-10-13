@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1440" viewBox="0 0 1080 1440">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7fbff"/><stop offset="1" stop-color="#e6f4ff"/></linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#62d1ff"/><stop offset=".55" stop-color="#12a9ec"/><stop offset="1" stop-color="#0879dc"/></linearGradient>
+    <linearGradient id="deep" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#35bdf2"/><stop offset="1" stop-color="#087ddd"/></linearGradient>
+    <clipPath id="mark"><circle cx="820" cy="300" r="210"/></clipPath>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="22" stdDeviation="28" flood-color="#187ec6" flood-opacity=".18"/></filter>
+  </defs>
+  <rect width="1080" height="1440" fill="url(#bg)"/>
+  <circle cx="90" cy="1280" r="340" fill="#d8efff" opacity=".45"/>
+  <g filter="url(#shadow)">
+    <circle cx="820" cy="300" r="210" fill="#eaf8ff"/>
+    <g clip-path="url(#mark)">
+      <path d="M560 300 C680 225 745 260 820 292 C900 326 966 330 1080 270 L1080 390 C968 450 892 430 816 395 C735 358 670 360 560 430Z" fill="#75d6ff"/>
+      <path d="M560 390 C675 320 744 350 820 388 C900 428 972 424 1080 365 L1080 490 C970 548 896 545 814 505 C738 468 668 470 560 535Z" fill="#31baf1"/>
+      <path d="M560 490 C675 420 743 455 820 492 C898 530 970 530 1080 465 L1080 620 L560 620Z" fill="url(#deep)"/>
+      <path d="M560 590 C670 520 750 560 820 595 C900 635 980 630 1080 570 L1080 740 L560 740Z" fill="#078be2"/>
+    </g>
+  </g>
+  <text x="96" y="210" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="30" fill="#0879dc" letter-spacing="5">FliFli Gesture HID</text>
+  <text x="96" y="430" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="76" font-weight="700" fill="#102944">翻翻</text>
+  <text x="96" y="520" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="54" font-weight="600" fill="#187ec6">蓝牙手势键盘</text>
+  <text x="96" y="610" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="30" fill="#52708f">把手机变成你的蓝牙输入设备</text>
+  <rect x="96" y="700" width="330" height="76" rx="38" fill="#0b8de1"/>
+  <text x="261" y="749" text-anchor="middle" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="27" font-weight="600" fill="white">触控 · 连接 · 输入</text>
+  <path d="M96 1115 C250 1005 360 1035 492 1100 C625 1165 754 1165 930 1055" fill="none" stroke="#60caf7" stroke-width="22" stroke-linecap="round" opacity=".35"/>
+  <path d="M96 1180 C250 1070 360 1100 492 1165 C625 1230 754 1230 930 1120" fill="none" stroke="#138fdf" stroke-width="22" stroke-linecap="round" opacity=".65"/>
+  <text x="96" y="1315" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" fill="#7894ad">适用于电脑、电视、平板、墨水屏阅读器等蓝牙 HID 主机</text>
+</svg>

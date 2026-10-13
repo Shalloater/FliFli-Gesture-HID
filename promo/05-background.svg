@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1440" viewBox="0 0 1080 1440">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#f8fcff"/><stop offset="1" stop-color="#e6f5ff"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#c7edff"/><stop offset="1" stop-color="#f4fbff"/></linearGradient>
+    <linearGradient id="ocean" x2="0" y2="1"><stop stop-color="#33b9ee"/><stop offset="1" stop-color="#0877d9"/></linearGradient>
+    <clipPath id="photo"><rect x="645" y="485" width="254" height="532" rx="30"/></clipPath>
+    <filter id="shadow" x="-30%" y="-20%" width="160%" height="150%"><feDropShadow dy="20" stdDeviation="22" flood-color="#1682c8" flood-opacity=".18"/></filter>
+  </defs>
+  <rect width="1080" height="1440" fill="url(#bg)"/>
+  <path d="M0 1240 Q250 1090 540 1220 T1080 1190V1440H0Z" fill="#d2efff" opacity=".55"/>
+  <g font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+    <text x="80" y="130" font-size="25" fill="#087ddd" letter-spacing="4">05 / BACKGROUND</text>
+    <text x="80" y="230" font-size="62" font-weight="700" fill="#102944">触摸背景，随心切换</text>
+    <text x="80" y="300" font-size="30" fill="#52708f">喜欢安静的纯黑，也可以放上你喜欢的图像</text>
+    <g filter="url(#shadow)">
+      <rect x="165" y="469" width="290" height="566" rx="46" fill="#173754"/>
+      <rect x="183" y="485" width="254" height="532" rx="30" fill="#000"/>
+      <rect x="627" y="469" width="290" height="566" rx="46" fill="#173754"/>
+      <rect x="645" y="485" width="254" height="532" rx="30" fill="url(#sky)"/>
+    </g>
+    <g clip-path="url(#photo)">
+      <circle cx="829" cy="604" r="46" fill="#fff" opacity=".88"/>
+      <path d="M610 722Q716 657 801 720T934 707V1030H610Z" fill="#81d7f9"/>
+      <path d="M610 809Q720 733 809 802T934 782V1030H610Z" fill="#35baf0"/>
+      <path d="M610 906Q710 813 810 888T940 869V1030H610Z" fill="url(#ocean)"/>
+    </g>
+    <g fill="none" stroke="#0b91df" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M500 724H580L568 712 M580 724L568 736 M580 778H500L512 766 M500 778L512 790"/></g>
+    <text x="310" y="1111" text-anchor="middle" font-size="34" font-weight="700" fill="#173754">纯黑背景</text>
+    <text x="310" y="1156" text-anchor="middle" font-size="24" fill="#68849d">低调简洁，专注手势操作</text>
+    <text x="772" y="1111" text-anchor="middle" font-size="34" font-weight="700" fill="#173754">自选图像</text>
+    <text x="772" y="1156" text-anchor="middle" font-size="24" fill="#68849d">从相册选择，裁剪成喜欢的样子</text>
+    <rect x="300" y="1230" width="480" height="65" rx="32.5" fill="#e1f3ff" stroke="#b9e4f9" stroke-width="2"/>
+    <text x="540" y="1273" text-anchor="middle" font-size="25" fill="#187ec6">你的屏幕，你的触控空间</text>
+    <text x="80" y="1380" font-size="21" fill="#5d7c95">适用于全屏手势键盘 · 图像为背景效果示意</text>
+  </g>
+</svg>

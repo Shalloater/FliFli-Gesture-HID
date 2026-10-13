@@ -373,7 +373,12 @@ public class HidRemoteService extends Service {
     private void sendKeyboardAction(HidAction.ActionDefinition action) {
         byte[] press = buildKeyboardReport(action.modifierMask, action.keyboardUsages);
         byte[] release = buildKeyboardReport(0, null);
-        hidDevice.sendReport(connectedHost, KEYBOARD_REPORT_ID, press);
+        try {
+            hidDevice.sendReport(connectedHost, KEYBOARD_REPORT_ID, press);
+        } catch (SecurityException e) {
+            setStatus("发送失败：缺少蓝牙权限。");
+            return;
+        }
         setStatus("已发送：" + action.label);
         mainHandler.postDelayed(() -> sendRelease(KEYBOARD_REPORT_ID, release), 35);
     }
@@ -395,7 +400,12 @@ public class HidRemoteService extends Service {
                 (byte) ((action.consumerUsage >> 8) & 0xFF)
         };
         byte[] release = new byte[]{0x00, 0x00};
-        hidDevice.sendReport(connectedHost, CONSUMER_REPORT_ID, press);
+        try {
+            hidDevice.sendReport(connectedHost, CONSUMER_REPORT_ID, press);
+        } catch (SecurityException e) {
+            setStatus("发送失败：缺少蓝牙权限。");
+            return;
+        }
         setStatus("已发送：" + action.label);
         mainHandler.postDelayed(() -> sendRelease(CONSUMER_REPORT_ID, release), 35);
     }
@@ -550,6 +560,8 @@ public class HidRemoteService extends Service {
     }
 
     private void updateNotification() {
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) return;
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager != null) {
             manager.notify(NOTIFICATION_ID, buildNotification());
@@ -557,6 +569,7 @@ public class HidRemoteService extends Service {
     }
 
     private Notification buildNotification() {
+        Context localized = AppPreferences.localized(this);
         Intent openIntent = new Intent(this, MainActivity.class);
         PendingIntent openPendingIntent = PendingIntent.getActivity(
                 this, 0, openIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -577,12 +590,13 @@ public class HidRemoteService extends Service {
 
         return new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher)
-                .setContentTitle("翻翻")
-                .setContentText(status)
+                .setContentTitle(localized.getString(R.string.app_name))
+                .setContentText(connectedHost == null ? localized.getString(R.string.notification_idle)
+                        : localized.getString(R.string.ui_connected) + " · " + safeDeviceName(connectedHost))
                 .setContentIntent(openPendingIntent)
                 .setOngoing(true)
-                .addAction(new Notification.Action.Builder(R.drawable.ic_launcher, "断开", disconnectPendingIntent).build())
-                .addAction(new Notification.Action.Builder(R.drawable.ic_launcher, "停止", stopPendingIntent).build())
+                .addAction(new Notification.Action.Builder(R.drawable.ic_launcher, localized.getString(R.string.ui_disconnect), disconnectPendingIntent).build())
+                .addAction(new Notification.Action.Builder(R.drawable.ic_launcher, localized.getString(R.string.notification_stop), stopPendingIntent).build())
                 .build();
     }
 
@@ -596,10 +610,10 @@ public class HidRemoteService extends Service {
         }
         NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
-                "蓝牙输入连接",
+                AppPreferences.localized(this).getString(R.string.notification_channel),
                 NotificationManager.IMPORTANCE_LOW
         );
-        channel.setDescription("保持蓝牙 HID 自定义输入设备在锁屏时继续连接");
+        channel.setDescription(AppPreferences.localized(this).getString(R.string.notification_description));
         manager.createNotificationChannel(channel);
     }
 

@@ -302,7 +302,7 @@ import static com.example.joyvolumeremote.KeyboardDefinitions.*;
             strokePaint.setStrokeWidth(dp(1f));
             strokePaint.setColor(Color.argb(90, 255, 255, 255));
             canvas.drawRoundRect(exitRect, radius, radius, strokePaint);
-            drawCenteredText(canvas, "退出", exitRect.centerX(), exitRect.centerY(),
+            drawCenteredText(canvas, getContext().getString(R.string.ui_exit), exitRect.centerX(), exitRect.centerY(),
                     Math.min(dp(13), exitRect.height() * 0.36f), Color.rgb(34, 43, 59));
         }
 

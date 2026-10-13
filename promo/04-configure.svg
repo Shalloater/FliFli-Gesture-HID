@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1440" viewBox="0 0 1080 1440">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f7fcff"/><stop offset="1" stop-color="#e5f5ff"/></linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#12324f"/><stop offset="1" stop-color="#0b79c9"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#1485cc" flood-opacity=".18"/></filter>
+  </defs>
+  <rect width="1080" height="1440" fill="url(#bg)"/>
+  <circle cx="120" cy="1330" r="320" fill="#d4efff" opacity=".58"/>
+    <text x="80" y="130" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" fill="#087ddd" letter-spacing="4">04 / CONFIGURE</text>
+  <text x="80" y="230" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="62" font-weight="700" fill="#102944">把动作交给你定义</text>
+  <text x="80" y="300" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="30" fill="#52708f">创建多个键盘，让每一次触控都顺手</text>
+  <g filter="url(#shadow)">
+    <rect x="110" y="420" width="860" height="650" rx="42" fill="white"/>
+    <path d="M152 420 H928 Q970 420 970 462 V532 H110 V462 Q110 420 152 420Z" fill="url(#screen)"/>
+    <circle cx="170" cy="476" r="22" fill="#67d4ff"/>
+    <path d="M160 476 C168 468 175 468 183 476 C175 484 168 484 160 476Z" fill="white"/>
+    <text x="215" y="488" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="30" font-weight="600" fill="white">自定义手势键盘</text>
+    <rect x="160" y="590" width="760" height="92" rx="24" fill="#f1f9ff" stroke="#d1ecfb" stroke-width="2"/>
+    <rect x="190" y="622" width="56" height="28" rx="14" fill="#0a91df"/>
+    <text x="275" y="646" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" fill="#173754">单指双击 · 音量+</text>
+    <rect x="160" y="714" width="760" height="92" rx="24" fill="#f1f9ff" stroke="#d1ecfb" stroke-width="2"/>
+    <rect x="190" y="746" width="56" height="28" rx="14" fill="#43c4f3"/>
+    <text x="275" y="770" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" fill="#173754">上滑 · Page Down</text>
+    <rect x="160" y="838" width="760" height="92" rx="24" fill="#f1f9ff" stroke="#d1ecfb" stroke-width="2"/>
+    <rect x="190" y="870" width="56" height="28" rx="14" fill="#80dfff"/>
+    <text x="275" y="894" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" fill="#173754">左半屏单击 · Ctrl + C</text>
+    <text x="160" y="1004" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="22" fill="#68849d">配置示例 · 动作可按需选择</text>
+  </g>
+  <g transform="translate(90 1170)">
+    <circle cx="32" cy="32" r="32" fill="#0b8fe1"/>
+    <path d="M20 32 H44 M32 20 V44" stroke="white" stroke-width="6" stroke-linecap="round"/>
+    <text x="82" y="28" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="28" font-weight="600" fill="#173754">键盘按键 · 组合键 · 媒体键</text>
+    <text x="82" y="70" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" fill="#68849d">按需添加，不被固定布局限制</text>
+  </g>
+  <text x="80" y="1365" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" fill="#7894ad">翻翻 · 蓝牙手势键盘</text>
+</svg>

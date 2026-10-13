@@ -5,9 +5,8 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
 import android.view.View;
-
-import static com.example.joyvolumeremote.KeyboardDefinitions.*;
 
 final class IconView extends View {
     static final int ICON_BLUETOOTH = 1;
@@ -23,14 +22,17 @@ final class IconView extends View {
     static final int ICON_HEXAGON = 11;
     static final int ICON_PLAY = 12;
     static final int ICON_KEYBOARD = 13;
+    static final int ICON_GESTURE_KEYBOARD = 14;
+    static final int ICON_HOME = 15;
+    static final int ICON_LINK_OFF = 16;
 
     private final Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final int iconType;
+    private int iconType = -1;
+    private Drawable suppliedIcon;
 
     IconView(Context context, int iconType, int tintColor, float strokeDp) {
         super(context);
-        this.iconType = iconType;
         strokePaint.setStyle(Paint.Style.STROKE);
         strokePaint.setStrokeCap(Paint.Cap.ROUND);
         strokePaint.setStrokeJoin(Paint.Join.ROUND);
@@ -38,28 +40,48 @@ final class IconView extends View {
         strokePaint.setStrokeWidth(getResources().getDisplayMetrics().density * strokeDp);
         fillPaint.setStyle(Paint.Style.FILL);
         fillPaint.setColor(tintColor);
+        setIconType(iconType);
     }
 
     void setTintColor(int color) {
         strokePaint.setColor(color);
         fillPaint.setColor(color);
+        if (suppliedIcon != null) suppliedIcon.setTint(color);
+        invalidate();
+    }
+
+    void setIconType(int type) {
+        if (iconType == type) return;
+        iconType = type;
+        int resource;
+        switch (type) {
+            case ICON_REFRESH: resource = R.drawable.ic_refresh; break;
+            case ICON_SETTINGS: resource = R.drawable.ic_customize; break;
+            case ICON_KEYBOARD: resource = R.drawable.ic_keyboard; break;
+            case ICON_GESTURE_KEYBOARD: resource = R.drawable.ic_keyboard_finger; break;
+            case ICON_HOME: resource = R.drawable.ic_house_chimney; break;
+            case ICON_LINK: resource = R.drawable.ic_link_horizontal; break;
+            case ICON_LINK_OFF: resource = R.drawable.ic_link_horizontal_slash; break;
+            default: resource = 0; break;
+        }
+        suppliedIcon = resource == 0 ? null : getContext().getDrawable(resource).mutate();
+        if (suppliedIcon != null) suppliedIcon.setTint(strokePaint.getColor());
         invalidate();
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        if (suppliedIcon != null) {
+            suppliedIcon.setBounds(0, 0, getWidth(), getHeight());
+            suppliedIcon.draw(canvas);
+            return;
+        }
         float w = getWidth();
         float h = getHeight();
         switch (iconType) {
             case ICON_BLUETOOTH:
                 drawBluetooth(canvas, w, h);
-                break;
-            case ICON_SETTINGS:
-                drawSettings(canvas, w, h);
-                break;
-            case ICON_REFRESH:
-                drawRefresh(canvas, w, h);
                 break;
             case ICON_CHEVRON:
                 drawChevron(canvas, w, h);
@@ -73,17 +95,11 @@ final class IconView extends View {
             case ICON_WATCH:
                 drawWatch(canvas, w, h);
                 break;
-            case ICON_LINK:
-                drawLink(canvas, w, h);
-                break;
             case ICON_HEXAGON:
                 drawHexagon(canvas, w, h);
                 break;
             case ICON_PLAY:
                 drawPlay(canvas, w, h);
-                break;
-            case ICON_KEYBOARD:
-                drawKeyboard(canvas, w, h);
                 break;
             default:
                 drawDevice(canvas, w, h);
@@ -107,58 +123,6 @@ final class IconView extends View {
         canvas.drawPath(path, strokePaint);
     }
 
-    private void drawSettings(Canvas canvas, float w, float h) {
-        float cx = w / 2f;
-        float cy = h / 2f;
-        float outer = Math.min(w, h) * 0.3f;
-        float inner = Math.min(w, h) * 0.14f;
-        canvas.drawCircle(cx, cy, outer, strokePaint);
-        canvas.drawCircle(cx, cy, inner, strokePaint);
-        for (int i = 0; i < 6; i++) {
-            double angle = Math.toRadians(i * 60d);
-            float startX = cx + (float) Math.cos(angle) * outer;
-            float startY = cy + (float) Math.sin(angle) * outer;
-            float endX = cx + (float) Math.cos(angle) * (outer + Math.min(w, h) * 0.1f);
-            float endY = cy + (float) Math.sin(angle) * (outer + Math.min(w, h) * 0.1f);
-            canvas.drawLine(startX, startY, endX, endY, strokePaint);
-        }
-    }
-
-    private void drawRefresh(Canvas canvas, float w, float h) {
-        RectF oval = new RectF(w * 0.2f, h * 0.2f, w * 0.8f, h * 0.8f);
-        float startAngle = 46f;
-        float sweepAngle = 258f;
-        canvas.drawArc(oval, startAngle, sweepAngle, false, strokePaint);
-
-        float endAngle = startAngle + sweepAngle;
-        float rx = oval.width() / 2f;
-        float ry = oval.height() / 2f;
-        float cx = oval.centerX();
-        float cy = oval.centerY();
-        double theta = Math.toRadians(endAngle);
-
-        float tipX = cx + rx * (float) Math.cos(theta);
-        float tipY = cy + ry * (float) Math.sin(theta);
-        float tangentX = -rx * (float) Math.sin(theta);
-        float tangentY = ry * (float) Math.cos(theta);
-        float tangentLength = (float) Math.sqrt(tangentX * tangentX + tangentY * tangentY);
-        if (tangentLength == 0f) tangentLength = 1f;
-        tangentX /= tangentLength;
-        tangentY /= tangentLength;
-
-        float arrowSize = Math.min(w, h) * 0.18f;
-        float backX = tipX - tangentX * arrowSize;
-        float backY = tipY - tangentY * arrowSize;
-        float normalX = -tangentY;
-        float normalY = tangentX;
-
-        Path arrow = new Path();
-        arrow.moveTo(tipX, tipY);
-        arrow.lineTo(backX + normalX * arrowSize * 0.46f, backY + normalY * arrowSize * 0.46f);
-        arrow.moveTo(tipX, tipY);
-        arrow.lineTo(backX - normalX * arrowSize * 0.46f, backY - normalY * arrowSize * 0.46f);
-        canvas.drawPath(arrow, strokePaint);
-    }
 
     private void drawChevron(Canvas canvas, float w, float h) {
         Path path = new Path();
@@ -192,13 +156,6 @@ final class IconView extends View {
         canvas.drawCircle(w * 0.5f, h * 0.74f, Math.min(w, h) * 0.04f, fillPaint);
     }
 
-    private void drawLink(Canvas canvas, float w, float h) {
-        RectF left = new RectF(w * 0.12f, h * 0.38f, w * 0.54f, h * 0.78f);
-        RectF right = new RectF(w * 0.46f, h * 0.22f, w * 0.88f, h * 0.62f);
-        canvas.drawRoundRect(left, w * 0.18f, w * 0.18f, strokePaint);
-        canvas.drawRoundRect(right, w * 0.18f, w * 0.18f, strokePaint);
-        canvas.drawLine(w * 0.4f, h * 0.58f, w * 0.6f, h * 0.42f, strokePaint);
-    }
 
     private void drawHexagon(Canvas canvas, float w, float h) {
         Path hex = new Path();
@@ -226,18 +183,5 @@ final class IconView extends View {
         canvas.drawPath(path, fillPaint);
     }
 
-    private void drawKeyboard(Canvas canvas, float w, float h) {
-        RectF body = new RectF(w * 0.12f, h * 0.24f, w * 0.88f, h * 0.76f);
-        canvas.drawRoundRect(body, w * 0.08f, w * 0.08f, strokePaint);
-        float top = h * 0.4f;
-        float bottom = h * 0.6f;
-        for (int row = 0; row < 2; row++) {
-            float y = row == 0 ? top : bottom;
-            canvas.drawLine(w * 0.25f, y, w * 0.32f, y, strokePaint);
-            canvas.drawLine(w * 0.42f, y, w * 0.49f, y, strokePaint);
-            canvas.drawLine(w * 0.59f, y, w * 0.66f, y, strokePaint);
-            canvas.drawLine(w * 0.74f, y, w * 0.79f, y, strokePaint);
-        }
-    }
 
 }

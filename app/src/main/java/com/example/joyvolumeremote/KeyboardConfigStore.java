@@ -13,13 +13,23 @@ import static com.example.joyvolumeremote.KeyboardDefinitions.*;
 
 final class KeyboardConfigStore {
     private final SharedPreferences preferences;
+    private final android.content.res.Resources resources;
 
     KeyboardConfigStore(Context context) {
-        this(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE));
+        this(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE), context.getResources());
     }
 
     KeyboardConfigStore(SharedPreferences preferences) {
+        this(preferences, null);
+    }
+
+    private KeyboardConfigStore(SharedPreferences preferences, android.content.res.Resources resources) {
         this.preferences = preferences;
+        this.resources = resources;
+    }
+
+    private String text(int id, String fallback) {
+        return resources == null ? fallback : resources.getString(id);
     }
 
     private static final String PREFS_NAME = "pager_settings";
@@ -118,7 +128,7 @@ final class KeyboardConfigStore {
         if (object == null) return null;
         CustomKeyboardConfig config = new CustomKeyboardConfig();
         config.id = object.optString("id", "");
-        config.name = object.optString("name", "全屏手势键盘");
+        config.name = object.optString("name", keyboardTypeLabel(KEYBOARD_TYPE_FULLSCREEN_GESTURE));
         config.type = object.optString("type", KEYBOARD_TYPE_FULLSCREEN_GESTURE);
         config.controlMode = object.optString("controlMode", CONTROL_MODE_FULLSCREEN);
         config.backgroundImageUri = object.optString("backgroundImageUri", "");
@@ -190,7 +200,7 @@ final class KeyboardConfigStore {
 
     void normalizeKeyboardConfig(CustomKeyboardConfig config) {
         if (config.id == null || config.id.trim().isEmpty()) config.id = allocateKeyboardId();
-        if (config.name == null || config.name.trim().isEmpty()) config.name = "全屏手势键盘";
+        if (config.name == null || config.name.trim().isEmpty()) config.name = keyboardTypeLabel(config.type);
         if (!isKnownKeyboardType(config.type)) config.type = KEYBOARD_TYPE_FULLSCREEN_GESTURE;
         if (!CONTROL_MODE_LANDSCAPE.equals(config.controlMode)
                 && !CONTROL_MODE_PORTRAIT.equals(config.controlMode)
@@ -285,7 +295,7 @@ final class KeyboardConfigStore {
     CustomKeyboardConfig createDefaultKeyboardFromLegacy() {
         CustomKeyboardConfig config = new CustomKeyboardConfig();
         config.id = "keyboard_1";
-        config.name = "默认手势键盘";
+        config.name = keyboardTypeLabel(KEYBOARD_TYPE_FULLSCREEN_GESTURE);
         config.type = KEYBOARD_TYPE_FULLSCREEN_GESTURE;
         config.controlMode = preferences == null
                 ? CONTROL_MODE_FULLSCREEN
@@ -311,7 +321,7 @@ final class KeyboardConfigStore {
     private CustomKeyboardConfig createReaderPagingKeyboard() {
         CustomKeyboardConfig config = new CustomKeyboardConfig();
         config.id = "keyboard_1";
-        config.name = "阅读器翻页";
+        config.name = text(R.string.reader_keyboard, "阅读器翻页");
         config.type = KEYBOARD_TYPE_FULLSCREEN_GESTURE;
         config.controlMode = CONTROL_MODE_FULLSCREEN;
         config.vibrationEnabled = false;
@@ -402,8 +412,8 @@ final class KeyboardConfigStore {
     }
 
     private String keyboardTypeLabel(String type) {
-        if (KEYBOARD_TYPE_COMPUTER.equals(type)) return "电脑键盘";
-        return "全屏手势键盘";
+        if (KEYBOARD_TYPE_COMPUTER.equals(type)) return text(R.string.ui_computer_keyboard, "电脑键盘");
+        return text(R.string.ui_gesture_keyboard, "全屏手势键盘");
     }
 
     private boolean isKnownKeyboardType(String type) {

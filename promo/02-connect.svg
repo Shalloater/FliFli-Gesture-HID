@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1440" viewBox="0 0 1080 1440">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#f8fcff"/><stop offset="1" stop-color="#e6f5ff"/></linearGradient>
+    <linearGradient id="bubble" x2="1" y2="1"><stop stop-color="#e0f5ff"/><stop offset="1" stop-color="#bde9ff"/></linearGradient>
+    <linearGradient id="blue" x2="1" y2="1"><stop stop-color="#40c6f4"/><stop offset="1" stop-color="#087ddd"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dy="14" stdDeviation="18" flood-color="#1385cb" flood-opacity=".13"/></filter>
+  </defs>
+  <rect width="1080" height="1440" fill="url(#bg)"/>
+  <circle cx="1030" cy="50" r="250" fill="#d7efff" opacity=".6"/>
+  <g font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+    <text x="80" y="130" font-size="25" fill="#087ddd" letter-spacing="4">02 / SCENARIOS</text>
+    <text x="80" y="230" font-size="62" font-weight="700" fill="#102944">手机，就是你的翻页器</text>
+    <text x="80" y="300" font-size="30" fill="#52708f">读书、演示、听歌，让常用操作留在手边</text>
+    <g filter="url(#shadow)">
+      <circle cx="371" cy="656" r="281" fill="url(#bubble)" stroke="#b7e3f8" stroke-width="2"/>
+      <circle cx="829" cy="529" r="167" fill="#fff" stroke="#d0eaf8" stroke-width="2"/>
+      <circle cx="822" cy="924" r="184" fill="#f8fcff" stroke="#c7e9fa" stroke-width="2"/>
+      <circle cx="350" cy="1129" r="177" fill="#fff" stroke="#c7e9fa" stroke-width="2"/>
+    </g>
+    <circle cx="704" cy="1184" r="38" fill="#c0eafd"/>
+    <circle cx="114" cy="1004" r="20" fill="#81d6f9"/>
+    <circle cx="610" cy="388" r="13" fill="#39bdf0"/>
+    <!-- Main use case: e-ink reader and handheld paging remote. -->
+    <rect x="253" y="453" width="183" height="237" rx="20" fill="#173754"/>
+    <rect x="267" y="467" width="155" height="208" rx="9" fill="#fbfcfa"/>
+    <g stroke="#abb5ba" stroke-width="5" stroke-linecap="round"><path d="M288 529H402 M288 548H391 M288 567H402 M288 586H380 M288 605H402 M288 624H388"/></g>
+    <rect x="420" y="573" width="69" height="131" rx="14" fill="url(#blue)"/>
+    <rect x="427" y="582" width="55" height="109" rx="8" fill="#e7f7ff"/>
+    <path d="M441 635H467 M459 627L467 635L459 643" fill="none" stroke="#078ddd" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="371" y="764" text-anchor="middle" font-size="38" font-weight="700" fill="#173754">墨水屏阅读器翻页</text>
+    <text x="371" y="818" text-anchor="middle" font-size="27" fill="#416c89">轻点或滑动，遥控前后翻页</text>
+    <text x="371" y="863" text-anchor="middle" font-size="24" fill="#416c89">躺着读，也不必伸手碰屏幕</text>
+    <!-- Presentation bubble. -->
+    <g fill="none" stroke="#128fdd" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"><rect x="763" y="416" width="133" height="80" rx="8"/><path d="M829 496V520 M800 520H858 M786 473L810 447L833 462L871 437"/></g>
+    <text x="829" y="563" text-anchor="middle" font-size="30" font-weight="700" fill="#173754">幻灯片翻页</text>
+    <text x="829" y="605" text-anchor="middle" font-size="23" fill="#68849d">讲到哪里，翻到哪里</text>
+    <!-- Music bubble. -->
+    <circle cx="822" cy="847" r="47" fill="#def4ff"/>
+    <path d="M811 827L840 847L811 867Z" fill="#0b91de"/>
+    <text x="822" y="942" text-anchor="middle" font-size="30" font-weight="700" fill="#173754">音乐随手控</text>
+    <text x="822" y="986" text-anchor="middle" font-size="23" fill="#68849d">播放暂停 · 切歌 · 音量</text>
+    <!-- Desktop shortcut bubble. -->
+    <rect x="272" y="1023" width="156" height="63" rx="15" fill="#e6f6ff" stroke="#78cbf1" stroke-width="2"/>
+    <text x="350" y="1065" text-anchor="middle" font-size="28" font-weight="600" fill="#078ddd">Ctrl + C</text>
+    <text x="350" y="1148" text-anchor="middle" font-size="30" font-weight="700" fill="#173754">电脑快捷操作</text>
+    <text x="350" y="1192" text-anchor="middle" font-size="23" fill="#68849d">复制 · 粘贴 · 撤销</text>
+    <text x="80" y="1380" font-size="21" fill="#5d7c95">需设备支持蓝牙 HID，并在目标应用中设置或支持对应按键</text>
+  </g>
+</svg>
