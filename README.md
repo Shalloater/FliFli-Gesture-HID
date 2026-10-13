@@ -1,8 +1,6 @@
 # FliFli Gesture HID
 
-“翻翻 · 蓝牙手势键盘”是一个 Android 手机蓝牙 HID 自定义输入设备示例。手机会伪装成一个蓝牙 HID 设备，并支持通过手势发送可配置的输入动作。
-
-项目宣传图（SVG 源文件、1080×1440 PNG 和五页总览）位于 [`promo/`](promo/README.md)，可直接下载[五页宣传图套装](promo/FliFli-promo-5pages-v2.zip)。
+“翻翻 · 蓝牙手势键盘”是一个 Android 手机蓝牙 HID 自定义输入app。手机会伪装成一个蓝牙 HID 设备，并支持通过手势发送可配置的输入动作。
 
 当前支持的输出类型：
 
@@ -104,7 +102,3 @@ app/build/outputs/apk/debug/FliFli-v1.5.4.apk
 - 更多组合键
 - 更多媒体键
 - 长按、宏、动作序列
-
-## 给 Codex 的构建提示词
-
-见 `CODEX_BUILD_PROMPT.md`。
