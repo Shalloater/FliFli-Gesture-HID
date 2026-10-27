@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "FliFli Gesture HID"
 include(":app")
+include(":compat")

@@ -1,0 +1,33 @@
+<resources>
+    <string name="demo_hold_hint">长按动作或触控手势可查看演示。</string>
+    <string name="demo_loading">正在加载演示</string>
+    <string name="demo_failed">演示未能加载，请重试。</string>
+    <string name="demo_retry">重试</string>
+    <string name="demo_close">关闭演示</string>
+    <string name="demo_play">播放</string>
+    <string name="demo_pause">暂停</string>
+    <string name="demo_replay">重播</string>
+    <string name="demo_speed">速度 %1$s</string>
+    <string name="demo_progress">演示进度</string>
+    <string name="demo_slow">教学慢放 · 查看演示不会发送信号</string>
+    <string name="demo_action_role">本机 · 触发动作</string>
+    <string name="demo_signal_role">受控端 · 触控信号</string>
+    <string name="demo_signal_instruction">受控端收到图示触点，从标记处按下，完成动作后抬起。</string>
+    <string name="demo_tap_instruction">在高亮区域按图示手指数连续轻点，每次都抬起全部手指。</string>
+    <string name="demo_swipe_instruction">按住并沿箭头滑动，结束后抬起。</string>
+    <string name="demo_multi_swipe_instruction">保持手指间距，一起沿箭头移动，然后全部抬起。</string>
+    <string name="demo_circle_instruction">单指持续按住，沿图示方向画一圈，再抬起。</string>
+    <string name="demo_active_area">%1$s · 有效区域</string>
+    <string name="demo_contact_legend">实心触点为按下，淡出为抬起</string>
+    <string name="demo_group_legend">同组触点一起操作</string>
+    <string name="demo_ready">准备</string>
+    <string name="demo_press">按下</string>
+    <string name="demo_move">沿箭头滑动</string>
+    <string name="demo_release">抬起</string>
+    <string name="demo_finish">抬起 · 完成</string>
+    <string name="demo_release_all">抬起全部手指</string>
+    <string name="demo_press_together">一起按下</string>
+    <string name="demo_press_step">第 %1$d 次按下</string>
+    <string name="demo_tap_step">第 %1$d 次轻点</string>
+    <string name="demo_wait">等待下一轮</string>
+</resources>

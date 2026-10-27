@@ -1,0 +1,39 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
+    <application android:allowBackup="false" android:icon="@drawable/ic_launcher_blue"
+        android:label="@string/compat_app_name" android:theme="@style/AppTheme">
+        <service android:name="com.example.joyvolumeremote.HidRemoteService" android:exported="false"
+            android:foregroundServiceType="connectedDevice" android:stopWithTask="false" />
+        <activity android:name="com.example.joyvolumeremote.MainActivity" android:exported="true"
+            android:enableOnBackInvokedCallback="true"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity-alias android:name="${applicationId}.LauncherBlue" android:targetActivity="com.example.joyvolumeremote.MainActivity"
+            android:enabled="true" android:exported="true" android:icon="@drawable/ic_launcher_blue" android:label="@string/compat_app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name="${applicationId}.LauncherPink" android:targetActivity="com.example.joyvolumeremote.MainActivity"
+            android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_pink" android:label="@string/compat_app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name="${applicationId}.LauncherPurple" android:targetActivity="com.example.joyvolumeremote.MainActivity"
+            android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_purple" android:label="@string/compat_app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name="${applicationId}.LauncherGreen" android:targetActivity="com.example.joyvolumeremote.MainActivity"
+            android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_green" android:label="@string/compat_app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+        <activity-alias android:name="${applicationId}.LauncherBlack" android:targetActivity="com.example.joyvolumeremote.MainActivity"
+            android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_black" android:label="@string/compat_app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity-alias>
+    </application>
+</manifest>

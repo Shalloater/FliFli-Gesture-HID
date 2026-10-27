@@ -3,6 +3,7 @@
 .agents/
 build/
 app/build/
+compat/build/
 local.properties
 github access token.txt
 *.apk
@@ -10,3 +11,9 @@ github access token.txt
 .DS_Store
 .idea/
 *.iml
+.playwright-cli/
+__pycache__/
+*.pyc
+/output/*
+!/output/gesture-previews/
+/output/gesture-previews/*.zip

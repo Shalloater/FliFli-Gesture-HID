@@ -28,7 +28,7 @@
     <string name="ui_custom_keyboards">"カスタムキーボード"</string>
     <string name="ui_add">"追加"</string>
     <string name="ui_no_keyboards_yet_tap_add_to_create_one">"追加をタップしてキーボードを作成します。"</string>
-    <string name="ui_gesture_keyboard">"全画面ジェスチャーキーボード"</string>
+    <string name="ui_gesture_keyboard">"ジェスチャーキーボード"</string>
     <string name="ui_computer_keyboard">"PC キーボード"</string>
     <string name="ui_ready_to_create_and_use">"作成して使用できます"</string>
     <string name="ui_available">"利用可能"</string>
@@ -50,10 +50,8 @@
     <string name="ui_off">"オフ"</string>
     <string name="ui_vibration_strength">"振動の強さ"</string>
     <string name="ui_gestures">"ジェスチャー"</string>
-    <string name="ui_add_a_tap_or_swipe_then_choose_the_signal_it_sends">"タップやスワイプを追加し、送信する信号を選択します。"</string>
+    <string name="ui_add_a_tap_or_swipe_then_choose_the_signal_it_sends">"操作を追加からタップやスワイプを選び、送信する信号を設定します。"</string>
     <string name="ui_no_gestures_yet_add_a_tap_or_swipe">"タップやスワイプを追加してください。"</string>
-    <string name="ui_add_tap">"タップを追加"</string>
-    <string name="ui_add_swipe">"スワイプを追加"</string>
     <string name="ui_layout">"レイアウト"</string>
     <string name="ui_orientation">"画面の向き"</string>
     <string name="ui_output">"出力信号"</string>
@@ -77,9 +75,7 @@
     <string name="ui_could_not_crop_image">"切り抜きに失敗しました"</string>
     <string name="ui_could_not_save_background">"背景を保存できません"</string>
     <string name="ui_background_saved">"背景を設定しました"</string>
-    <string name="ui_choose_tap_gesture">"タップを選択"</string>
     <string name="ui_tap_gesture">"タップ操作"</string>
-    <string name="ui_choose_swipe_gesture">"スワイプを選択"</string>
     <string name="ui_full_screen_gesture">"全画面で操作"</string>
     <string name="ui_already_configured">"すでに設定済み"</string>
     <string name="ui_configured">"設定済み"</string>
@@ -174,10 +170,10 @@
     <string name="action_down">"下矢印"</string>
     <string name="action_left">"左矢印"</string>
     <string name="action_right">"右矢印"</string>
-    <string name="action_volume_up">"音量を上げる"</string>
-    <string name="action_volume_down">"音量を下げる"</string>
+    <string name="action_volume_up">"音量+"</string>
+    <string name="action_volume_down">"音量-"</string>
     <string name="action_mute">"ミュート"</string>
-    <string name="action_power">"電源（試験的）"</string>
+    <string name="action_power">"電源"</string>
     <string name="action_play">"再生 / 一時停止"</string>
     <string name="action_next">"次の曲"</string>
     <string name="action_previous">"前の曲"</string>

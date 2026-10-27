@@ -1,0 +1,16 @@
+<resources>
+    <string name="touch_passthrough">タッチ転送</string>
+    <string name="touch_type_hint">1本指を画面比率でリアルタイム転送</string>
+    <string name="touch_output">リアルタイムタッチ · 1本指</string>
+    <string name="touch_mapping_hint">タッチ領域を接続先の画面に縦横の比率で割り当てます。縦横比が違うと軌跡が伸縮するため、画面の向きを合わせてください。1本指のタップ、ダブルタップ、長押し、ドラッグに対応します。指を追加すると接続先のタッチを解除し、すべての指を離すまで入力を停止します。2本指で内側にピンチすると終了します。リモート画面は表示しません。</string>
+    <string name="touch_passthrough_surface">タッチ転送領域</string>
+    <string name="touch_connection_required">タッチ接続が利用できません。接続先に再接続してください。</string>
+    <string name="touch_exit_hint">2本指で内側にピンチして終了</string>
+    <string name="touch_back_again">2秒以内にもう一度戻るとタッチ転送を終了します</string>
+    <string name="touch_pinning_inactive">画面固定が有効ではないため、Homeの誤操作防止は機能していません。</string>
+    <string name="touch_pinning_stop_failed">画面固定を解除できませんでした。開始時にシステムが案内した解除ジェスチャーを使ってください。</string>
+    <string name="touch_pinning">画面固定保護</string>
+    <string name="touch_pinning_hint">任意のHome誤操作防止です。開始時の案内はシステムが表示し、2本指で終了するとこのアプリが開始した固定を解除します。解除後もロックしない場合は、システムに解除時のロック設定があればオフにしてください。</string>
+    <string name="touch_safe_area">安全タッチ領域</string>
+    <string name="touch_safe_area_hint">安全範囲内で最大の3:4領域を中央に表示し、接続先の画面全体に対応させます。枠外から滑らせると、枠に入った境界でタッチが始まります。枠外のタップは送信しません。</string>
+</resources>

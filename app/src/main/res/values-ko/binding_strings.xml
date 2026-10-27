@@ -1,0 +1,8 @@
+<resources>
+    <string name="binding_edit_title">동작 편집</string>
+    <string name="binding_edit_hint">실행 제스처와 보낼 신호를 선택한 후 완료를 눌러 저장하세요.</string>
+    <string name="binding_trigger">실행 제스처</string>
+    <string name="binding_choose_trigger">실행 제스처 선택</string>
+    <string name="binding_conflict">다른 동작이 이 제스처를 사용 중이거나 탭 영역이 겹칩니다.</string>
+    <string name="binding_missing">이 동작이 변경되었습니다. 창을 닫고 다시 열어주세요.</string>
+</resources>

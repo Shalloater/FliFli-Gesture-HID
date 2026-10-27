@@ -13,6 +13,8 @@ final class CustomKeyboardConfig {
     String backgroundImageUri;
     boolean vibrationEnabled;
     int vibrationLevel;
+    boolean screenPinning;
+    boolean safeTouchArea;
     final List<GestureBinding> bindings = new ArrayList<>();
 
     CustomKeyboardConfig copy() {
@@ -24,6 +26,8 @@ final class CustomKeyboardConfig {
         copy.backgroundImageUri = backgroundImageUri;
         copy.vibrationEnabled = vibrationEnabled;
         copy.vibrationLevel = vibrationLevel;
+        copy.screenPinning = screenPinning;
+        copy.safeTouchArea = safeTouchArea;
         for (GestureBinding binding : bindings) {
             copy.bindings.add(binding.copy());
         }

@@ -42,6 +42,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -65,6 +66,11 @@ public class MainActivity extends Activity {
     private HidRemoteService hidService;
     private KeyboardConfigStore keyboardStore;
     private AppPreferences appearance;
+    private GestureDemoCatalog gestureDemos;
+    private GesturePreviewDialog gesturePreview;
+    private SignalPickerDialog signalPicker;
+    private GestureBindingEditorDialog bindingEditor;
+    private AlertDialog choiceDialog;
     private boolean serviceBound = false;
 
     private TextView connectionTitleView;
@@ -79,6 +85,14 @@ public class MainActivity extends Activity {
     private boolean wasConnected = false;
     private boolean wasBluetoothOn = false;
     private CustomKeyboardConfig activeKeyboardConfig;
+    private TouchPassthroughView touchSurface;
+    private ScrollView keyboardEditorScroll;
+    private String keyboardEditorId;
+    private Object backNavigationCallback;
+    private boolean touchBarsHidden;
+    private static final long TOUCH_BACK_CONFIRM_MS = 2000;
+    private long touchBackDeadline;
+    private ScreenPinningProtection screenPinningProtection;
     private CustomKeyboardConfig pendingBackgroundDraft;
     private boolean pendingBackgroundIsNew;
     private Runnable refreshFeedbackResetRunnable;
@@ -122,14 +136,20 @@ public class MainActivity extends Activity {
         final int iconType;
         final int iconColor;
         final boolean enabled;
+        final String demoId;
 
         PickerItem(String title, String subtitle, String chipText, int iconType, int iconColor, boolean enabled) {
+            this(title, subtitle, chipText, iconType, iconColor, enabled, null);
+        }
+
+        PickerItem(String title, String subtitle, String chipText, int iconType, int iconColor, boolean enabled, String demoId) {
             this.title = title;
             this.subtitle = subtitle;
             this.chipText = chipText;
             this.iconType = iconType;
             this.iconColor = iconColor;
             this.enabled = enabled;
+            this.demoId = demoId;
         }
     }
 
@@ -146,6 +166,15 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (showingRemotePage && isTouchKeyboard(activeKeyboardConfig)) {
+            long now = android.os.SystemClock.elapsedRealtime();
+            if (touchBackDeadline > now) exitRemotePage();
+            else {
+                touchBackDeadline = now + TOUCH_BACK_CONFIRM_MS;
+                Toast.makeText(this, R.string.touch_back_again, Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
         if (showingRemotePage) exitRemotePage();
         else if (editingKeyboard) showSettingsPage();
         else if (!showingKeyboardPage) showKeyboardsPage();
@@ -155,7 +184,17 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        screenPinningProtection = new ScreenPinningProtection(this, result -> {
+            if (result == ScreenPinningProtection.Result.PENDING || result == ScreenPinningProtection.Result.ACTIVE) return;
+            if (result == ScreenPinningProtection.Result.STOP_FAILED || (showingRemotePage && isTouchKeyboard(activeKeyboardConfig))) {
+                Toast.makeText(this, result == ScreenPinningProtection.Result.STOP_FAILED ? R.string.touch_pinning_stop_failed
+                        : R.string.touch_pinning_inactive,
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+        backNavigationCallback = SystemGestureProtection.registerBackCallback(this, this::onBackPressed);
         appearance = new AppPreferences(this);
+        gestureDemos = new GestureDemoCatalog(this);
         keyboardStore = new KeyboardConfigStore(this);
         keyboardStore.ensureKeyboardConfigsInitialized();
         int page = savedInstanceState == null ? PAGE_KEYBOARDS : savedInstanceState.getInt("page", PAGE_KEYBOARDS);
@@ -163,7 +202,7 @@ public class MainActivity extends Activity {
         else if (page == PAGE_CONNECTION) showSetupPage();
         else showKeyboardsPage();
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+        if (Build.VERSION.SDK_INT < HidRemoteService.MIN_SUPPORTED_API) {
             updateStatus(getString(R.string.ui_android_9_or_later_is_required));
             return;
         }
@@ -182,7 +221,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && bluetoothAdapter != null && hasBluetoothConnectPermission()) {
+        if (Build.VERSION.SDK_INT >= HidRemoteService.MIN_SUPPORTED_API && bluetoothAdapter != null && hasBluetoothConnectPermission()) {
             startAndBindHidService();
         }
     }
@@ -199,6 +238,21 @@ public class MainActivity extends Activity {
         }
         wasBluetoothOn = btOn;
         syncUiFromService();
+        if (showingRemotePage && isTouchKeyboard(activeKeyboardConfig)) enterRemoteFullscreen();
+    }
+
+    @Override public void onWindowFocusChanged(boolean focused) {
+        super.onWindowFocusChanged(focused);
+        if (screenPinningProtection != null) screenPinningProtection.onWindowFocusChanged(focused);
+        if (!focused) touchBackDeadline = 0;
+        if (focused && showingRemotePage && isTouchKeyboard(activeKeyboardConfig)) enterRemoteFullscreen();
+    }
+
+    @Override
+    protected void onPause() {
+        touchBackDeadline = 0;
+        if (touchSurface != null) touchSurface.releaseTouches();
+        super.onPause();
     }
 
     @Override
@@ -214,6 +268,12 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (bindingEditor != null) bindingEditor.dismiss();
+        if (gesturePreview != null) gesturePreview.dismiss();
+        if (signalPicker != null) signalPicker.dismiss();
+        if (choiceDialog != null) choiceDialog.dismiss();
+        if (screenPinningProtection != null) screenPinningProtection.stop();
+        SystemGestureProtection.unregisterBackCallback(this, backNavigationCallback);
         mainHandler.removeCallbacksAndMessages(null);
         super.onDestroy();
     }
@@ -325,6 +385,7 @@ public class MainActivity extends Activity {
 
         View refreshButton = makeIconButton(IconView.ICON_REFRESH, v -> {
             v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            if (HidRemoteService.IS_BLE_COMPAT && hidService != null) hidService.connectHidProfile();
             refreshPairedDevices(true);
         });
         refreshButton.setContentDescription(getString(R.string.refresh));
@@ -484,7 +545,15 @@ public class MainActivity extends Activity {
         view.setMinimumHeight(dp(48));
         android.util.TypedValue value = new android.util.TypedValue();
         getTheme().resolveAttribute(android.R.attr.selectableItemBackground, value, true);
-        view.setForeground(getDrawable(value.resourceId));
+        if (Build.VERSION.SDK_INT >= 23) {
+            view.setForeground(getDrawable(value.resourceId));
+        } else {
+            // View foregrounds were added in API 23. Keep existing card backgrounds on Android 5.
+            view.setOnTouchListener((v, event) -> {
+                v.setAlpha(event.getActionMasked() == android.view.MotionEvent.ACTION_DOWN ? 0.65f : 1f);
+                return false;
+            });
+        }
     }
 
     private LinearLayout.LayoutParams spacedParams() {
@@ -563,16 +632,23 @@ public class MainActivity extends Activity {
                 IconView.ICON_GESTURE_KEYBOARD, appearance.accent(), true));
         types.add(new PickerItem(getString(R.string.ui_computer_keyboard), getString(R.string.ui_landscape_qwerty_layout), getString(R.string.ui_available),
                 IconView.ICON_KEYBOARD, appearance.accent(), true));
+        types.add(new PickerItem(getString(R.string.touch_passthrough), getString(HidRemoteService.IS_BLE_COMPAT
+                ? R.string.signal_touch_ble : R.string.touch_type_hint), HidRemoteService.IS_BLE_COMPAT ? null : getString(R.string.ui_available),
+                IconView.ICON_GESTURE_KEYBOARD, appearance.accent(), !HidRemoteService.IS_BLE_COMPAT));
         showStyledChoiceDialog(getString(R.string.ui_choose_keyboard_type), null, types, -1, which -> {
             String type = KEYBOARD_TYPE_FULLSCREEN_GESTURE;
             if (which == 1) type = KEYBOARD_TYPE_COMPUTER;
+            if (which == 2) type = KEYBOARD_TYPE_TOUCH_PASSTHROUGH;
             showKeyboardEditor(keyboardStore.createNewKeyboardDraft(type), true);
         });
     }
 
     private void showKeyboardEditor(CustomKeyboardConfig draft, boolean isNew) {
+        int previousScroll = editingKeyboard && draft.id != null && draft.id.equals(keyboardEditorId)
+                && keyboardEditorScroll != null ? keyboardEditorScroll.getScrollY() : 0;
         editingKeyboard = true;
         keyboardStore.normalizeKeyboardConfig(draft);
+        keyboardEditorId = draft.id;
         keyboardStore.upsertKeyboardConfig(draft);
         mainHandler.removeCallbacks(restoreSetupOrientationRunnable);
         exitRemoteFullscreen();
@@ -626,7 +702,7 @@ public class MainActivity extends Activity {
         baseParams.bottomMargin = dp(12);
         content.addView(baseCard, baseParams);
 
-        if (isGestureKeyboard(draft)) {
+        if (isGestureKeyboard(draft) || isTouchKeyboard(draft)) {
             LinearLayout backgroundCard = createCardLayout(dp(24), 3f);
             backgroundCard.setOrientation(LinearLayout.VERTICAL);
             backgroundCard.setPadding(dp(14), dp(14), dp(14), dp(14));
@@ -668,7 +744,8 @@ public class MainActivity extends Activity {
             addCardHeading(actionCard, getString(R.string.ui_gestures));
 
             TextView actionHint = new TextView(this);
-            actionHint.setText(getString(R.string.ui_add_a_tap_or_swipe_then_choose_the_signal_it_sends));
+            actionHint.setText(getString(R.string.ui_add_a_tap_or_swipe_then_choose_the_signal_it_sends)
+                    + "\n" + getString(R.string.demo_hold_hint) + "\n" + getString(R.string.touch_exit_hint));
             setTextSizeSp(actionHint, 10.5f);
             actionHint.setTextColor(Color.rgb(91, 102, 121));
             actionHint.setPadding(0, dp(5), 0, 0);
@@ -684,20 +761,39 @@ public class MainActivity extends Activity {
             }
             actionCard.addView(actionList, makeInnerListParams());
 
-            LinearLayout addGestureRow = new LinearLayout(this);
-            addGestureRow.setOrientation(LinearLayout.HORIZONTAL);
-            LinearLayout.LayoutParams addTapParams = new LinearLayout.LayoutParams(0, -2, 1f);
-            addTapParams.topMargin = dp(12);
-            addTapParams.rightMargin = dp(6);
-            addGestureRow.addView(makeSmallTextButton(getString(R.string.ui_add_tap), v -> showTapGesturePicker(draft, isNew)), addTapParams);
-            LinearLayout.LayoutParams addMotionParams = new LinearLayout.LayoutParams(0, -2, 1f);
-            addMotionParams.topMargin = dp(12);
-            addMotionParams.leftMargin = dp(6);
-            addGestureRow.addView(makeSmallTextButton(getString(R.string.ui_add_swipe), v -> showMotionGesturePicker(draft, isNew)), addMotionParams);
-            actionCard.addView(addGestureRow, new LinearLayout.LayoutParams(-1, -2));
+            LinearLayout.LayoutParams addActionParams = new LinearLayout.LayoutParams(-1, -2);
+            addActionParams.topMargin = dp(12);
+            actionCard.addView(makeSmallTextButton(getString(R.string.ui_add_action), v -> showGesturePicker(draft, isNew)), addActionParams);
             LinearLayout.LayoutParams actionParams = new LinearLayout.LayoutParams(-1, -2);
             actionParams.bottomMargin = dp(12);
             content.addView(actionCard, actionParams);
+        } else if (isTouchKeyboard(draft)) {
+            LinearLayout touchCard = createCardLayout(dp(24), 0);
+            touchCard.setOrientation(LinearLayout.VERTICAL);
+            touchCard.setPadding(dp(14), dp(14), dp(14), dp(14));
+            addCardHeading(touchCard, getString(R.string.ui_layout));
+            LinearLayout touchList = makeInnerList();
+            addConfigRow(touchList, getString(R.string.ui_orientation), touchOrientationLabel(draft), null,
+                    v -> showTouchOrientationPicker(draft, isNew), true);
+            addConfigRow(touchList, getString(R.string.ui_output), getString(R.string.touch_output), null, null, true);
+            addConfigRow(touchList, getString(R.string.touch_safe_area), getString(R.string.touch_safe_area_hint),
+                    getString(draft.safeTouchArea ? R.string.ui_on : R.string.ui_off), v -> {
+                        draft.safeTouchArea = !draft.safeTouchArea;
+                        showKeyboardEditor(draft, isNew);
+                    }, true);
+            addConfigRow(touchList, getString(R.string.touch_pinning), getString(R.string.touch_pinning_hint),
+                    getString(draft.screenPinning ? R.string.ui_on : R.string.ui_off), v -> {
+                        draft.screenPinning = !draft.screenPinning;
+                        showKeyboardEditor(draft, isNew);
+                    }, false);
+            touchCard.addView(touchList, makeInnerListParams());
+            TextView explanation = new TextView(this);
+            explanation.setText(getString(R.string.touch_mapping_hint));
+            explanation.setTextColor(Color.rgb(91, 102, 121));
+            explanation.setTextSize(12);
+            explanation.setPadding(0, dp(12), 0, 0);
+            touchCard.addView(explanation);
+            content.addView(touchCard, spacedParams());
         } else {
             LinearLayout layoutCard = createCardLayout(dp(24), 3f);
             layoutCard.setOrientation(LinearLayout.VERTICAL);
@@ -722,7 +818,30 @@ public class MainActivity extends Activity {
             content.addView(deleteButton, new LinearLayout.LayoutParams(-1, -2));
         }
 
-        setContentView(buildScaffold(content, PAGE_SETTINGS));
+        View scaffold = buildScaffold(content, PAGE_SETTINGS);
+        ScrollView scroll = keyboardEditorScroll;
+        if (previousScroll > 0) {
+            scroll.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
+                @Override public boolean onPreDraw() {
+                    scroll.getViewTreeObserver().removeOnPreDrawListener(this);
+                    scroll.scrollTo(0, previousScroll);
+                    return true;
+                }
+            });
+        }
+        setContentView(scaffold);
+    }
+
+    private void showTouchOrientationPicker(CustomKeyboardConfig draft, boolean isNew) {
+        List<PickerItem> items = new ArrayList<>();
+        for (int resource : new int[]{R.string.ui_portrait, R.string.ui_landscape}) {
+            items.add(new PickerItem(getString(resource), null, null, IconView.ICON_DEVICE, appearance.accent(), true));
+        }
+        showStyledChoiceDialog(getString(R.string.ui_orientation), null, items,
+                CONTROL_MODE_LANDSCAPE.equals(draft.controlMode) ? 1 : 0, which -> {
+                    draft.controlMode = which == 1 ? CONTROL_MODE_LANDSCAPE : CONTROL_MODE_PORTRAIT;
+                    showKeyboardEditor(draft, isNew);
+                });
     }
 
     private void showKeyboardNameDialog(CustomKeyboardConfig draft, boolean isNew) {
@@ -807,7 +926,8 @@ public class MainActivity extends Activity {
 
         enterRemoteFullscreen();
         allowScreenSleep();
-        applyOrientationForSetup();
+        if (isTouchKeyboard(draft)) applyOrientationForRemote(draft);
+        else applyOrientationForSetup();
         showingRemotePage = false;
         showingSettingsPage = true;
         showingKeyboardPage = false;
@@ -938,31 +1058,68 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void showTapGesturePicker(CustomKeyboardConfig draft, boolean isNew) {
-        List<PickerItem> items = new ArrayList<>();
-        List<int[]> values = new ArrayList<>();
-        for (int fingers = 1; fingers <= 3; fingers++) {
-            for (int taps = 1; taps <= 3; taps++) {
-                items.add(new PickerItem(fingerLabel(fingers) + tapCountLabel(taps), getString(R.string.ui_tap_gesture), null,
-                        IconView.ICON_GESTURE_KEYBOARD, appearance.accent(), true));
-                values.add(new int[]{fingers, taps});
-            }
-        }
-        showStyledChoiceDialog(getString(R.string.ui_choose_tap_gesture), null, items, -1, which -> {
-            int[] value = values.get(which);
-            showTapAreaPicker(draft, isNew, value[0], value[1]);
-        });
+    private void showGesturePicker(CustomKeyboardConfig draft, boolean isNew) {
+        pickTrigger(draft, null, null, selected -> showNewActionPicker(draft, selected, isNew));
     }
 
-    private void showTapAreaPicker(CustomKeyboardConfig draft, boolean isNew, int fingers, int taps) {
+    private void pickTrigger(CustomKeyboardConfig draft, GestureBinding ignored, GestureBinding current,
+            GestureBindingEditorDialog.GestureSelected selected) {
+        List<PickerItem> tapItems = new ArrayList<>();
+        List<int[]> tapValues = new ArrayList<>();
+        for (int fingers = 1; fingers <= 3; fingers++) {
+            for (int taps = 1; taps <= 3; taps++) {
+                tapItems.add(new PickerItem(fingerLabel(fingers) + tapCountLabel(taps), getString(R.string.ui_tap_gesture), null,
+                        IconView.ICON_GESTURE_KEYBOARD, appearance.accent(), true, GestureBinding.tapKey(fingers, taps, TAP_AREA_FULL)));
+                tapValues.add(new int[]{fingers, taps});
+            }
+        }
+        List<PickerItem> motions = new ArrayList<>();
+        List<GestureBinding> motionValues = new ArrayList<>();
+        for (int fingers = 1; fingers <= 3; fingers++) {
+            for (String motion : MOTION_GESTURES) {
+                if (fingers > 1 && (MOTION_CIRCLE_CLOCKWISE.equals(motion) || MOTION_CIRCLE_COUNTERCLOCKWISE.equals(motion))) continue;
+                GestureBinding binding = new GestureBinding();
+                binding.kind = GESTURE_KIND_MOTION;
+                binding.fingers = fingers;
+                binding.tapCount = 0;
+                binding.area = TAP_AREA_FULL;
+                binding.motion = motion;
+                binding.actionId = "none";
+                boolean configured = GestureRules.hasBindingConflict(draft.bindings, binding, ignored);
+                motions.add(new PickerItem(gestureTitle(binding), configured ? getString(R.string.ui_already_configured) : getString(R.string.ui_full_screen_gesture),
+                        configured ? getString(R.string.ui_configured) : null, IconView.ICON_GESTURE_KEYBOARD, appearance.accent(), !configured, binding.key()));
+                motionValues.add(binding);
+            }
+        }
+        List<List<PickerItem>> groups = new ArrayList<>();
+        groups.add(tapItems); groups.add(motions);
+        int[] selectedIndices = {-1, -1};
+        int initialPage = current != null && GESTURE_KIND_MOTION.equals(current.kind) ? 1 : 0;
+        if (current != null) {
+            if (initialPage == 0) selectedIndices[0] = (current.fingers - 1) * 3 + current.tapCount - 1;
+            else for (int i = 0; i < motionValues.size(); i++) if (motionValues.get(i).key().equals(current.key())) selectedIndices[1] = i;
+        }
+        showChoiceDialog(getString(current == null ? R.string.ui_add_action : R.string.binding_choose_trigger),
+                getString(R.string.demo_hold_hint), groups, selectedIndices, initialPage, new PickerSelectionHandler[]{which -> {
+            int[] value = tapValues.get(which);
+            pickTapArea(draft, ignored, current, value[0], value[1], selected);
+        }, which -> selected.accept(motionValues.get(which))},
+                new String[]{getString(R.string.ui_tap), getString(R.string.ui_swipe)});
+    }
+
+    private void pickTapArea(CustomKeyboardConfig draft, GestureBinding ignored, GestureBinding current, int fingers, int taps,
+            GestureBindingEditorDialog.GestureSelected selected) {
         List<PickerItem> items = new ArrayList<>();
+        int selectedIndex = -1;
         for (int i = 0; i < TAP_AREAS.length; i++) {
             String area = TAP_AREAS[i];
-            boolean conflict = hasTapAreaConflict(draft, fingers, taps, area, null);
+            boolean conflict = hasTapAreaConflict(draft, fingers, taps, area, ignored);
+            if (current != null && GESTURE_KIND_TAP.equals(current.kind) && current.fingers == fingers
+                    && current.tapCount == taps && area.equals(current.area)) selectedIndex = i;
             items.add(new PickerItem(tapAreaLabel(area), conflict ? getString(R.string.ui_overlaps_another_region) : getString(R.string.ui_trigger_area),
-                    conflict ? getString(R.string.ui_conflict) : null, IconView.ICON_DEVICE, appearance.accent(), !conflict));
+                    conflict ? getString(R.string.ui_conflict) : null, IconView.ICON_DEVICE, appearance.accent(), !conflict, GestureBinding.tapKey(fingers, taps, area)));
         }
-        showStyledChoiceDialog(fingerLabel(fingers) + tapCountLabel(taps) + getString(R.string.ui_region), null, items, -1, which -> {
+        showStyledChoiceDialog(fingerLabel(fingers) + tapCountLabel(taps) + getString(R.string.ui_region), getString(R.string.demo_hold_hint), items, selectedIndex, which -> {
             String area = TAP_AREAS[which];
             GestureBinding binding = new GestureBinding();
             binding.kind = GESTURE_KIND_TAP;
@@ -971,55 +1128,79 @@ public class MainActivity extends Activity {
             binding.area = area;
             binding.motion = "";
             binding.actionId = "none";
-            showActionPicker(draft, binding, isNew, true);
+            selected.accept(binding);
         });
     }
 
-    private void showMotionGesturePicker(CustomKeyboardConfig draft, boolean isNew) {
-        List<PickerItem> items = new ArrayList<>();
-        List<GestureBinding> candidates = new ArrayList<>();
-        for (int fingers = 1; fingers <= 3; fingers++) {
-            for (String motion : MOTION_GESTURES) {
-                if (fingers > 1 && (MOTION_CIRCLE_CLOCKWISE.equals(motion) || MOTION_CIRCLE_COUNTERCLOCKWISE.equals(motion))) {
-                    continue;
-                }
-                GestureBinding binding = new GestureBinding();
-                binding.kind = GESTURE_KIND_MOTION;
-                binding.fingers = fingers;
-                binding.tapCount = 0;
-                binding.area = TAP_AREA_FULL;
-                binding.motion = motion;
-                binding.actionId = "none";
-                boolean configured = findBindingByKey(draft, binding.key()) != null;
-                items.add(new PickerItem(gestureTitle(binding), configured ? getString(R.string.ui_already_configured) : getString(R.string.ui_full_screen_gesture),
-                        configured ? getString(R.string.ui_configured) : null, IconView.ICON_GESTURE_KEYBOARD, appearance.accent(), !configured));
-                candidates.add(binding);
-            }
-        }
-        showStyledChoiceDialog(getString(R.string.ui_choose_swipe_gesture), null, items, -1, which ->
-                showActionPicker(draft, candidates.get(which), isNew, true));
-    }
-
-    private void showActionPicker(CustomKeyboardConfig draft, GestureBinding binding, boolean isNew, boolean appendNew) {
-        List<HidAction.ActionDefinition> actions = HidAction.all();
-        List<PickerItem> items = new ArrayList<>();
-        int selectedIndex = 0;
-        String selectedActionId = binding.actionId == null ? "none" : binding.actionId;
-
-        for (int i = 0; i < actions.size(); i++) {
-            HidAction.ActionDefinition action = actions.get(i);
-            items.add(new PickerItem(ActionLabels.label(this, action), ActionLabels.category(this, action), null,
-                    pickerIconForAction(action), pickerColorForAction(action), true));
-            if (action.id.equals(selectedActionId)) selectedIndex = i;
-        }
-
-        showStyledChoiceDialog(gestureTitle(binding), getString(R.string.ui_choose_output_signal), items, selectedIndex, which -> {
-            binding.actionId = actions.get(which).id;
-            if (appendNew) {
-                draft.bindings.add(binding);
-            }
+    private void showNewActionPicker(CustomKeyboardConfig draft, GestureBinding binding, boolean isNew) {
+        showSignalPicker(binding, value -> {
+            binding.actionId = value;
+            draft.bindings.add(binding);
             showKeyboardEditor(draft, isNew);
         });
+    }
+
+    private void showSignalPicker(GestureBinding binding, SignalPickerDialog.OnSelected selected) {
+        if (signalPicker != null) signalPicker.dismiss();
+        SignalPickerDialog dialog = new SignalPickerDialog(this, appearance, gestureDemos, binding.actionId, gestureTitle(binding), selected);
+        signalPicker = dialog;
+        dialog.setOnDismissListener(d -> { if (signalPicker == dialog) signalPicker = null; });
+        dialog.show();
+    }
+
+    private void showBindingEditor(CustomKeyboardConfig draft, GestureBinding original, boolean isNew) {
+        if (bindingEditor != null) bindingEditor.dismiss();
+        GestureBindingEditorDialog dialog = new GestureBindingEditorDialog(this, appearance, gestureDemos, original,
+                new GestureBindingEditorDialog.Listener() {
+                    @Override public String title(GestureBinding binding) { return gestureTitle(binding); }
+                    @Override public void chooseGesture(GestureBinding current, GestureBindingEditorDialog.GestureSelected selected) {
+                        pickTrigger(draft, original, current, selected);
+                    }
+                    @Override public void chooseSignal(GestureBinding current, SignalPickerDialog.OnSelected selected) {
+                        showSignalPicker(current, selected);
+                    }
+                    @Override public void preview(String id) { showGesturePreview(id); }
+                    @Override public int save(GestureBinding edited) {
+                        int index = draft.bindings.indexOf(original);
+                        if (index < 0) return R.string.binding_missing;
+                        if (GestureRules.hasBindingConflict(draft.bindings, edited, original)) return R.string.binding_conflict;
+                        try { SignalProgram.parse(edited.actionId); }
+                        catch (IllegalArgumentException e) { return R.string.signal_invalid; }
+                        draft.bindings.set(index, edited.copy());
+                        showKeyboardEditor(draft, isNew);
+                        return 0;
+                    }
+                });
+        bindingEditor = dialog;
+        dialog.setOnDismissListener(d -> {
+            if (bindingEditor != dialog) return;
+            bindingEditor = null;
+            if (gesturePreview != null) gesturePreview.dismiss();
+            if (choiceDialog != null) choiceDialog.dismiss();
+            if (signalPicker != null) signalPicker.dismiss();
+        });
+        dialog.show();
+    }
+
+    private void showGesturePreview(String id) {
+        GestureDemoCatalog.Demo demo = gestureDemos.find(id);
+        if (demo == null) { Toast.makeText(this, R.string.demo_failed, Toast.LENGTH_SHORT).show(); return; }
+        if (gesturePreview != null) gesturePreview.dismiss();
+        String title = demo.action ? gestureTitle(demo.binding()) : ActionLabels.label(this, HidAction.byId(id));
+        GesturePreviewDialog dialog = new GesturePreviewDialog(this, appearance, gestureDemos, demo, title);
+        gesturePreview = dialog;
+        dialog.setOnDismissListener(d -> { if (gesturePreview == dialog) gesturePreview = null; });
+        dialog.show();
+    }
+
+    private View gestureThumbnail(String id) {
+        GestureDemoCatalog.Demo demo = gestureDemos.find(id);
+        if (demo == null) return makeIconBubble(34, appearance.tint(), IconView.ICON_GESTURE_KEYBOARD, appearance.accent(), 1.6f);
+        android.widget.ImageView image = new android.widget.ImageView(this);
+        image.setImageDrawable(new GestureThumbnailDrawable(demo, appearance));
+        image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        image.setLayoutParams(new LinearLayout.LayoutParams(dp(34), dp(40)));
+        return image;
     }
 
     private void showStyledChoiceDialog(
@@ -1029,6 +1210,18 @@ public class MainActivity extends Activity {
             int selectedIndex,
             PickerSelectionHandler selectionHandler
     ) {
+        List<List<PickerItem>> groups = new ArrayList<>(); groups.add(items);
+        showChoiceDialog(title, subtitle, groups, selectedIndex, new PickerSelectionHandler[]{selectionHandler}, null);
+    }
+
+    private void showChoiceDialog(String title, String subtitle, List<List<PickerItem>> groups, int selectedIndex,
+            PickerSelectionHandler[] handlers, String[] tabLabels) {
+        int[] selectedIndices = new int[groups.size()]; java.util.Arrays.fill(selectedIndices, -1); selectedIndices[0] = selectedIndex;
+        showChoiceDialog(title, subtitle, groups, selectedIndices, 0, handlers, tabLabels);
+    }
+
+    private void showChoiceDialog(String title, String subtitle, List<List<PickerItem>> groups, int[] selectedIndices, int initialPage,
+            PickerSelectionHandler[] handlers, String[] tabLabels) {
         final AlertDialog[] dialogRef = new AlertDialog[1];
 
         LinearLayout dialogCard = createCardLayout(dp(24), 3f);
@@ -1056,12 +1249,7 @@ public class MainActivity extends Activity {
         LinearLayout list = makeInnerList();
         list.setBackground(null);
         list.setPadding(0, dp(2), 0, dp(2));
-        for (int i = 0; i < items.size(); i++) {
-            addPickerRow(list, items.get(i), i, i == selectedIndex, selectionHandler, dialogRef);
-            if (i < items.size() - 1) {
-                list.addView(makeSeparator(), new LinearLayout.LayoutParams(-1, dp(1)));
-            }
-        }
+        populatePickerRows(list, groups.get(initialPage), selectedIndices[initialPage], handlers[initialPage], dialogRef);
 
         FrameLayout listViewport = new FrameLayout(this);
         listViewport.setBackground(roundedRect(Color.WHITE, dp(18), Color.rgb(234, 239, 248), 1));
@@ -1079,9 +1267,22 @@ public class MainActivity extends Activity {
         scrollView.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
         scrollView.addView(list, new ScrollView.LayoutParams(-1, -2));
 
+        if (tabLabels != null) {
+            PickerTabs tabs = new PickerTabs(this, tabLabels, true, index -> {
+                populatePickerRows(list, groups.get(index), selectedIndices[index], handlers[index], dialogRef);
+                scrollView.scrollTo(0, 0);
+            });
+            tabs.setSelectedIndex(initialPage);
+            LinearLayout.LayoutParams tabParams = new LinearLayout.LayoutParams(-1, -2);
+            tabParams.topMargin = dp(8);
+            dialogCard.addView(tabs, tabParams);
+        }
+
         int screenHeight = getResources().getDisplayMetrics().heightPixels;
-        int estimatedListHeight = items.size() * dp(58) + Math.max(0, items.size() - 1) * dp(1) + dp(4);
-        int maxListHeight = Math.min(dp(390), Math.max(dp(220), screenHeight - dp(320)));
+        int count = 0;
+        for (List<PickerItem> group : groups) count = Math.max(count, group.size());
+        int estimatedListHeight = count * dp(58) + Math.max(0, count - 1) * dp(1) + dp(4);
+        int maxListHeight = Math.min(dp(390), Math.max(dp(tabLabels == null ? 220 : 180), screenHeight - dp(tabLabels == null ? 320 : 368)));
         boolean needsScroll = estimatedListHeight > maxListHeight;
         listViewport.addView(scrollView, new FrameLayout.LayoutParams(-1, needsScroll ? -1 : -2));
 
@@ -1098,6 +1299,9 @@ public class MainActivity extends Activity {
 
         AlertDialog dialog = new AlertDialog.Builder(this).create();
         dialogRef[0] = dialog;
+        if (choiceDialog != null) choiceDialog.dismiss();
+        choiceDialog = dialog;
+        dialog.setOnDismissListener(d -> { if (choiceDialog == dialog) choiceDialog = null; });
         dialog.setView(dialogCard, 0, 0, 0, 0);
         dialog.show();
 
@@ -1110,6 +1314,15 @@ public class MainActivity extends Activity {
             attributes.width = Math.min(screenWidth - dp(36), dp(440));
             attributes.height = WindowManager.LayoutParams.WRAP_CONTENT;
             window.setAttributes(attributes);
+        }
+    }
+
+    private void populatePickerRows(LinearLayout list, List<PickerItem> items, int selectedIndex,
+            PickerSelectionHandler handler, AlertDialog[] dialogRef) {
+        list.removeAllViews();
+        for (int i = 0; i < items.size(); i++) {
+            addPickerRow(list, items.get(i), i, i == selectedIndex, handler, dialogRef);
+            if (i < items.size() - 1) list.addView(makeSeparator(), new LinearLayout.LayoutParams(-1, dp(1)));
         }
     }
 
@@ -1137,9 +1350,11 @@ public class MainActivity extends Activity {
         }
 
         row.setSelected(selected);
-        row.setEnabled(item.enabled);
+        // Configured/conflicting gestures remain unselectable, but their long-press explanation is available.
+        row.setEnabled(item.enabled || item.demoId != null);
         int iconColor = item.enabled ? item.iconColor : Color.rgb(150, 162, 184);
-        row.addView(makeIconBubble(34, appearance.tint(), item.iconType, iconColor, 1.6f));
+        row.addView(item.demoId == null ? makeIconBubble(34, appearance.tint(), item.iconType, iconColor, 1.6f) : gestureThumbnail(item.demoId));
+        if (item.demoId != null) row.setOnLongClickListener(v -> { showGesturePreview(item.demoId); return true; });
 
         LinearLayout textWrap = new LinearLayout(this);
         textWrap.setOrientation(LinearLayout.VERTICAL);
@@ -1148,6 +1363,7 @@ public class MainActivity extends Activity {
 
         TextView titleView = new TextView(this);
         titleView.setText(item.title);
+        titleView.setEnabled(item.enabled);
         setTextSizeSp(titleView, 12.5f);
         titleView.setTextColor(selected ? appearance.accent() : Color.rgb(20, 29, 48));
         titleView.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
@@ -1155,6 +1371,7 @@ public class MainActivity extends Activity {
 
         TextView subtitleView = new TextView(this);
         subtitleView.setText(item.subtitle == null ? "" : item.subtitle);
+        subtitleView.setEnabled(item.enabled);
         subtitleView.setVisibility(item.subtitle == null ? View.GONE : View.VISIBLE);
         setTextSizeSp(subtitleView, 10);
         subtitleView.setTextColor(Color.rgb(91, 102, 121));
@@ -1171,34 +1388,6 @@ public class MainActivity extends Activity {
         }
 
         parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
-    }
-
-    private int pickerIconForAction(HidAction.ActionDefinition action) {
-        if (action == null) return IconView.ICON_HEXAGON;
-        if ("kb_power".equals(action.id)) return IconView.ICON_DEVICE;
-        switch (action.outputType) {
-            case KEYBOARD:
-                return IconView.ICON_KEYBOARD;
-            case CONSUMER:
-                return IconView.ICON_PLAY;
-            case NONE:
-            default:
-                return IconView.ICON_CHEVRON;
-        }
-    }
-
-    private int pickerColorForAction(HidAction.ActionDefinition action) {
-        if (action == null) return Color.rgb(111, 126, 154);
-        if ("kb_power".equals(action.id)) return appearance.accent();
-        switch (action.outputType) {
-            case KEYBOARD:
-                return appearance.accent();
-            case CONSUMER:
-                return Color.rgb(22, 155, 114);
-            case NONE:
-            default:
-                return Color.rgb(111, 126, 154);
-        }
     }
 
     private void finishKeyboardEditor(CustomKeyboardConfig draft) {
@@ -1225,19 +1414,46 @@ public class MainActivity extends Activity {
     }
 
     private void showRemotePage(BluetoothDevice device, CustomKeyboardConfig keyboardConfig) {
+        touchBackDeadline = 0;
+        if (isTouchKeyboard(keyboardConfig) && HidRemoteService.IS_BLE_COMPAT) {
+            Toast.makeText(this, R.string.signal_touch_ble, Toast.LENGTH_LONG).show();
+            return;
+        }
         keepScreenAwake();
         showingRemotePage = true;
         showingSettingsPage = false;
         showingKeyboardPage = false;
         activeKeyboardConfig = keyboardConfig == null ? keyboardStore.createDefaultKeyboardFromLegacy() : keyboardConfig.copy();
-        applyOrientationForRemote(activeKeyboardConfig.type);
+        applyOrientationForRemote(activeKeyboardConfig);
         enterRemoteFullscreen();
         connectionTitleView = null;
         connectionSubtitleView = null;
         connectionStatusIcon = null;
         pairedListLayout = null;
 
-        if (isComputerKeyboard(activeKeyboardConfig)) {
+        if (isTouchKeyboard(activeKeyboardConfig)) {
+            TouchPassthroughView surface = new TouchPassthroughView(this, appearance.primary(), activeKeyboardConfig.vibrationEnabled,
+                    activeKeyboardConfig.vibrationLevel);
+            touchSurface = surface;
+            surface.setSafeAreaEnabled(activeKeyboardConfig.safeTouchArea);
+            surface.setBackgroundImageUri(activeKeyboardConfig.backgroundImageUri);
+            surface.setListener(report -> {
+                // Detach/focus callbacks from an old surface must never end a newly opened session.
+                if (touchSurface != surface || !showingRemotePage) return false;
+                if (report != null && TouchState.mask(report) != 0) touchBackDeadline = 0;
+                boolean accepted = hidService != null && hidService.sendTouchState(report);
+                if (!accepted && report != null) Toast.makeText(this, R.string.touch_connection_required, Toast.LENGTH_SHORT).show();
+                return accepted;
+            });
+            surface.setExitListener(this::exitRemotePage);
+            setContentView(surface);
+            enterRemoteFullscreen();
+            if (activeKeyboardConfig.screenPinning) mainHandler.post(() -> {
+                if (touchSurface == surface && showingRemotePage && isTouchKeyboard(activeKeyboardConfig) && activeKeyboardConfig.screenPinning) {
+                    screenPinningProtection.request();
+                }
+            });
+        } else if (isComputerKeyboard(activeKeyboardConfig)) {
             ComputerKeyboardView computerKeyboardView = new ComputerKeyboardView(this);
             computerKeyboardView.setStateListener(this::sendKeyboardState);
             computerKeyboardView.setDisconnectListener(this::exitRemotePage);
@@ -1271,6 +1487,7 @@ public class MainActivity extends Activity {
         root.setClipToPadding(false);
 
         ScrollView scrollView = new ScrollView(this);
+        if (editingKeyboard) keyboardEditorScroll = scrollView;
         scrollView.setFillViewport(false);
         scrollView.setVerticalScrollBarEnabled(false);
         scrollView.setClipChildren(false);
@@ -1618,11 +1835,15 @@ public class MainActivity extends Activity {
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dp(14), dp(14), dp(14), dp(14));
         makeInteractive(row);
-        row.setOnClickListener(v -> showActionPicker(draft, binding, isNew, false));
+        row.setOnClickListener(v -> showBindingEditor(draft, binding, isNew));
+        row.setOnLongClickListener(v -> { showGesturePreview(binding.key()); return true; });
+        row.addView(gestureThumbnail(binding.key()));
 
         LinearLayout textWrap = new LinearLayout(this);
         textWrap.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(0, -2, 1f);
+
+        textParams.leftMargin = dp(10);
 
         TextView titleView = new TextView(this);
         titleView.setText(gestureTitle(binding));
@@ -1631,7 +1852,7 @@ public class MainActivity extends Activity {
         titleView.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
 
         TextView subtitleView = new TextView(this);
-        subtitleView.setText(ActionLabels.label(this, HidAction.byId(binding.actionId)));
+        subtitleView.setText(ActionLabels.binding(this, binding.actionId));
         setTextSizeSp(subtitleView, 10);
         subtitleView.setTextColor(Color.rgb(91, 102, 121));
         subtitleView.setPadding(0, dp(5), 0, 0);
@@ -1654,12 +1875,8 @@ public class MainActivity extends Activity {
         if (addSeparator) parent.addView(makeSeparator(), new LinearLayout.LayoutParams(-1, dp(1)));
     }
 
-    private HidAction.ActionDefinition getActionForTrigger(String gestureKey) {
-        GestureBinding binding = findBindingByKey(activeKeyboardConfig, gestureKey);
-        return binding == null ? HidAction.byId("none") : HidAction.byId(binding.actionId);
-    }
-
     private String keyboardTypeLabel(String type) {
+        if (KEYBOARD_TYPE_TOUCH_PASSTHROUGH.equals(type)) return getString(R.string.touch_passthrough);
         return KEYBOARD_TYPE_COMPUTER.equals(type) ? getString(R.string.ui_computer_keyboard) : getString(R.string.ui_gesture_keyboard);
     }
 
@@ -1669,6 +1886,14 @@ public class MainActivity extends Activity {
 
     private boolean isComputerKeyboard(CustomKeyboardConfig config) {
         return config != null && KEYBOARD_TYPE_COMPUTER.equals(config.type);
+    }
+
+    private boolean isTouchKeyboard(CustomKeyboardConfig config) {
+        return config != null && KEYBOARD_TYPE_TOUCH_PASSTHROUGH.equals(config.type);
+    }
+
+    private String touchOrientationLabel(CustomKeyboardConfig config) {
+        return getString(CONTROL_MODE_LANDSCAPE.equals(config.controlMode) ? R.string.ui_landscape : R.string.ui_portrait);
     }
 
     private boolean isLandscapeRemoteType(String type) {
@@ -1711,13 +1936,9 @@ public class MainActivity extends Activity {
             GestureBinding ignoredBinding
     ) {
         if (config == null) return false;
-        for (GestureBinding binding : config.bindings) {
-            if (binding == ignoredBinding) continue;
-            if (!GESTURE_KIND_TAP.equals(binding.kind)) continue;
-            if (binding.fingers != fingers || binding.tapCount != tapCount) continue;
-            if (tapRegionsOverlap(binding.area, area)) return true;
-        }
-        return false;
+        GestureBinding candidate = new GestureBinding(); candidate.kind = GESTURE_KIND_TAP;
+        candidate.fingers = fingers; candidate.tapCount = tapCount; candidate.area = area;
+        return GestureRules.hasBindingConflict(config.bindings, candidate, ignoredBinding);
     }
 
     private String gestureTitle(GestureBinding binding) {
@@ -1776,6 +1997,9 @@ public class MainActivity extends Activity {
     private String keyboardSummary(CustomKeyboardConfig config) {
         String vibration = config.vibrationEnabled ? getString(R.string.ui_vibration_123) + vibrationLevelLabel(config.vibrationLevel) : getString(R.string.ui_vibration_off);
 
+        if (isTouchKeyboard(config)) {
+            return getString(R.string.touch_passthrough) + " · " + touchOrientationLabel(config) + " · " + vibration;
+        }
         if (isComputerKeyboard(config)) {
             return keyboardTypeLabel(config.type) + getString(R.string.ui_qwerty) + remoteOrientationLabel(config.type);
         }
@@ -1807,10 +2031,22 @@ public class MainActivity extends Activity {
                         | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         );
+        if (showingRemotePage && isTouchKeyboard(activeKeyboardConfig)) {
+            touchBarsHidden = true;
+            SystemGestureProtection.hideBars(getWindow());
+        }
     }
 
     private void exitRemoteFullscreen() {
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+        if (screenPinningProtection != null) screenPinningProtection.stop();
+        if (touchBarsHidden) {
+            SystemGestureProtection.restoreBars(getWindow());
+            touchBarsHidden = false;
+        }
+        int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
+        if (Build.VERSION.SDK_INT >= 23) flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        if (Build.VERSION.SDK_INT >= 26) flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        getWindow().getDecorView().setSystemUiVisibility(flags);
     }
 
     private void keepScreenAwake() {
@@ -1825,8 +2061,10 @@ public class MainActivity extends Activity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
 
-    private void applyOrientationForRemote(String type) {
-        setRequestedOrientation(isLandscapeRemoteType(type)
+    private void applyOrientationForRemote(CustomKeyboardConfig config) {
+        boolean landscape = isLandscapeRemoteType(config.type)
+                || (isTouchKeyboard(config) && CONTROL_MODE_LANDSCAPE.equals(config.controlMode));
+        setRequestedOrientation(landscape
                 ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                 : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
@@ -1880,6 +2118,9 @@ public class MainActivity extends Activity {
             if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
                 permissions.add(Manifest.permission.BLUETOOTH_CONNECT);
             }
+            if (HidRemoteService.IS_BLE_COMPAT && checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED) {
+                permissions.add(Manifest.permission.BLUETOOTH_ADVERTISE);
+            }
             if (!permissions.isEmpty()) {
                 requestPermissions(permissions.toArray(new String[0]), REQ_BLUETOOTH_PERMISSIONS);
             }
@@ -1888,7 +2129,8 @@ public class MainActivity extends Activity {
 
     private boolean hasBluetoothConnectPermission() {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
+                (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+                && (!HidRemoteService.IS_BLE_COMPAT || checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED));
     }
 
     private void toggleBluetooth() {
@@ -1946,13 +2188,15 @@ public class MainActivity extends Activity {
             }
             Set<BluetoothDevice> bondedDevices = hidService.getBondedDevices();
             if (bondedDevices == null || bondedDevices.isEmpty()) {
-                addInfoRow(getString(R.string.ui_no_paired_devices_pair_from_bluetooth_settings_on_your_computer_tv_or_));
+                addInfoRow(HidRemoteService.IS_BLE_COMPAT
+                        ? "请先在阅读器端搜索并配对这台手机的 BLE 键盘，再等待连接页显示键盘已就绪。"
+                        : getString(R.string.ui_no_paired_devices_pair_from_bluetooth_settings_on_your_computer_tv_or_));
                 finishPairedRefresh(userInitiated, getString(R.string.ui_refreshed), getString(R.string.ui_no_paired_devices_found));
                 return;
             }
 
             List<BluetoothDevice> devices = new ArrayList<>(bondedDevices);
-            devices.sort((left, right) -> safeDeviceName(left).compareToIgnoreCase(safeDeviceName(right)));
+            Collections.sort(devices, (left, right) -> safeDeviceName(left).compareToIgnoreCase(safeDeviceName(right)));
 
             for (int i = 0; i < devices.size(); i++) {
                 if (i > 0) {
@@ -2052,6 +2296,8 @@ public class MainActivity extends Activity {
     }
 
     private void exitRemotePage() {
+        touchBackDeadline = 0;
+        if (touchSurface != null) { touchSurface.releaseTouches(); touchSurface = null; }
         activeKeyboardConfig = null;
         showKeyboardsPage(false);
         mainHandler.post(restoreSetupOrientationRunnable);
@@ -2063,7 +2309,12 @@ public class MainActivity extends Activity {
             startAndBindHidService();
             return;
         }
-        hidService.sendAction(getActionForTrigger(triggerId));
+        GestureBinding binding = findBindingByKey(activeKeyboardConfig, triggerId);
+        try {
+            hidService.sendProgram(SignalProgram.parse(binding == null ? "none" : binding.actionId));
+        } catch (IllegalArgumentException e) {
+            updateStatus(getString(R.string.signal_invalid));
+        }
     }
 
     private void sendKeyboardState(int modifierMask, int[] keyboardUsages) {
@@ -2098,6 +2349,12 @@ public class MainActivity extends Activity {
         if (bluetoothAdapter == null) {
             connectionTitleView.setText(getString(R.string.ui_bluetooth_unavailable));
             connectionSubtitleView.setText(getString(R.string.ui_this_device_has_no_bluetooth_adapter));
+            return;
+        }
+
+        if (HidRemoteService.IS_BLE_COMPAT) {
+            connectionTitleView.setText(getString(R.string.app_name) + " · BLE HID");
+            connectionSubtitleView.setText(status == null ? getString(R.string.ui_starting) : status);
             return;
         }
 

@@ -1,0 +1,16 @@
+<resources>
+    <string name="touch_passthrough">Touch passthrough</string>
+    <string name="touch_type_hint">Mirror one finger by screen proportion</string>
+    <string name="touch_output">Real-time touch · One finger</string>
+    <string name="touch_mapping_hint">Maps the touch area to the target screen by width and height. Different aspect ratios stretch the path; match screen orientation for closer results. Sends single-finger taps, double taps, holds and drags. Adding another finger releases the remote touch and pauses input until all fingers lift. Pinch two fingers inward to exit. No remote screen image is shown.</string>
+    <string name="touch_passthrough_surface">Touch passthrough surface</string>
+    <string name="touch_connection_required">Touch connection unavailable. Reconnect the target device.</string>
+    <string name="touch_exit_hint">Pinch two fingers inward to exit</string>
+    <string name="touch_back_again">Press Back again within 2 seconds to exit touch passthrough</string>
+    <string name="touch_pinning_inactive">Screen pinning is not active. Home protection has not taken effect.</string>
+    <string name="touch_pinning_stop_failed">Could not unpin. Use the system unpin gesture shown when pinning started.</string>
+    <string name="touch_pinning">Screen pinning protection</string>
+    <string name="touch_pinning_hint">Optional Home protection. Entry prompts come from the system. Two-finger exit releases pinning started by this app. To stay unlocked afterward, disable the system setting that locks the device when unpinning, if available.</string>
+    <string name="touch_safe_area">Safe touch area</string>
+    <string name="touch_safe_area_hint">Largest centered 3:4 area, mapped to the entire target screen. You can start outside the frame: touch begins at the boundary when your path enters. Taps outside do nothing.</string>
+</resources>

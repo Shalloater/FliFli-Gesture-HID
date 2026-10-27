@@ -23,6 +23,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.util.Log;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,6 +34,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class HidRemoteService extends Service {
+    public static final int MIN_SUPPORTED_API = 28;
+    public static final boolean IS_BLE_COMPAT = false;
     public interface StateListener {
         void onHidStateChanged();
     }
@@ -50,8 +53,9 @@ public class HidRemoteService extends Service {
 
     private static final int KEYBOARD_REPORT_ID = 1;
     private static final int CONSUMER_REPORT_ID = 2;
+    private static final String TAG = "FliFliHID";
 
-    private static final byte[] COMBO_HID_REPORT_DESCRIPTOR = new byte[]{
+    private static final byte[] KEYBOARD_CONSUMER_DESCRIPTOR = new byte[]{
             0x05, 0x01,
             0x09, 0x06,
             (byte) 0xA1, 0x01,
@@ -91,6 +95,26 @@ public class HidRemoteService extends Service {
 
     };
 
+    private static final byte[] COMBO_HID_REPORT_DESCRIPTOR;
+    static {
+        COMBO_HID_REPORT_DESCRIPTOR = new byte[KEYBOARD_CONSUMER_DESCRIPTOR.length + SignalReports.TOUCH_DESCRIPTOR.length];
+        System.arraycopy(KEYBOARD_CONSUMER_DESCRIPTOR, 0, COMBO_HID_REPORT_DESCRIPTOR, 0, KEYBOARD_CONSUMER_DESCRIPTOR.length);
+        System.arraycopy(SignalReports.TOUCH_DESCRIPTOR, 0, COMBO_HID_REPORT_DESCRIPTOR, KEYBOARD_CONSUMER_DESCRIPTOR.length, SignalReports.TOUCH_DESCRIPTOR.length);
+    }
+
+    private final java.util.ArrayDeque<SignalReports.Frame> signalFrames = new java.util.ArrayDeque<>();
+    private BluetoothDevice playbackHost;
+    private boolean playingSignals;
+    private final Runnable nextSignalFrame = this::drainSignalFrames;
+    private final TouchReportQueue touchReports = new TouchReportQueue();
+    private BluetoothDevice touchHost;
+    private boolean touchSession, touchScheduled;
+    private byte[] lastTouchReport = TouchState.singleContact(false, 16384, 16384);
+    private final Runnable nextTouchFrame = this::drainTouchReports;
+    private static final int TOUCH_SESSION_RESET_MS = 35;
+    private int touchGeneration;
+    private Runnable pendingTouchRelease;
+
     private final IBinder binder = new LocalBinder();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
@@ -120,6 +144,8 @@ public class HidRemoteService extends Service {
         @Override
         public void onServiceDisconnected(int profile) {
             if (profile == BluetoothProfile.HID_DEVICE) {
+                cancelSignalPlayback();
+                cancelTouchStream(false);
                 hidDevice = null;
                 connectedHost = null;
                 hidAppRegistered = false;
@@ -133,6 +159,36 @@ public class HidRemoteService extends Service {
 
     private final BluetoothHidDevice.Callback hidCallback = new BluetoothHidDevice.Callback() {
         @Override
+        public void onGetReport(BluetoothDevice device, byte type, byte id, int bufferSize) {
+            Log.i(TAG, "GET_REPORT type=" + type + " id=" + (id & 255) + " buffer=" + bufferSize);
+            mainHandler.post(() -> {
+                // A host can query contact capacity while its connection is still being initialized.
+                if (hidDevice == null || device == null || (connectedHost != null && !device.equals(connectedHost))
+                        || !hasBluetoothConnectPermission()) return;
+                try {
+                    if (type == BluetoothHidDevice.REPORT_TYPE_FEATURE && id == SignalReports.TOUCH) {
+                        if (!hidDevice.replyReport(device, type, id, new byte[]{SignalReports.TOUCH_CONTACT_CAPACITY})) {
+                            cancelSignalPlayback();
+                            sendAllReleasedState();
+                            setStatus(getString(R.string.signal_send_failed));
+                        }
+                    } else {
+                        hidDevice.reportError(device, BluetoothHidDevice.ERROR_RSP_UNSUPPORTED_REQ);
+                    }
+                } catch (SecurityException | IllegalStateException e) {
+                    cancelSignalPlayback();
+                    sendAllReleasedState();
+                    setStatus(getString(R.string.signal_send_failed));
+                }
+            });
+        }
+
+        @Override
+        public void onSetProtocol(BluetoothDevice device, byte protocol) {
+            Log.i(TAG, "SET_PROTOCOL mode=" + protocol + " (0=Boot, 1=Report)");
+        }
+
+        @Override
         public void onAppStatusChanged(BluetoothDevice pluggedDevice, boolean registered) {
             mainHandler.post(() -> {
                 hidAppRegistered = registered;
@@ -140,6 +196,8 @@ public class HidRemoteService extends Service {
                     setStatus("自定义输入设备已注册，可发送键盘和媒体键。");
 
                 } else {
+                    cancelSignalPlayback();
+                    cancelTouchStream(false);
                     connectedHost = null;
                     setStatus("HID 设备已注销，正在尝试重新注册...");
                     if (!shuttingDown) {
@@ -153,6 +211,10 @@ public class HidRemoteService extends Service {
         public void onConnectionStateChanged(BluetoothDevice device, int state) {
             mainHandler.post(() -> {
                 if (state == BluetoothProfile.STATE_CONNECTED) {
+                    if (!device.equals(connectedHost)) {
+                        cancelSignalPlayback();
+                        cancelTouchStream(false);
+                    }
                     connectedHost = device;
                     setStatus("已连接：" + safeDeviceName(device) + " · 可发送自定义 HID 输入");
                 } else if (state == BluetoothProfile.STATE_CONNECTING) {
@@ -161,6 +223,8 @@ public class HidRemoteService extends Service {
                     setStatus("正在断开：" + safeDeviceName(device));
                 } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
                     if (device != null && device.equals(connectedHost)) {
+                        cancelSignalPlayback();
+                        cancelTouchStream(false);
                         connectedHost = null;
                     }
                     setStatus("连接已断开。请重新选择已配对设备连接。");
@@ -306,6 +370,8 @@ public class HidRemoteService extends Service {
     }
 
     public void disconnectHost() {
+        cancelSignalPlayback();
+        cancelTouchStream(false);
         if (hidDevice == null || connectedHost == null || !hasBluetoothConnectPermission()) {
             connectedHost = null;
             setStatus("已返回连接页。");
@@ -325,8 +391,124 @@ public class HidRemoteService extends Service {
         }
     }
 
-    public void sendAction(HidAction.ActionDefinition action) {
-        if (action == null || action.outputType == HidAction.OutputType.NONE) {
+    /** A null report aborts the current contact stream immediately (pause, cancel or exit). */
+    public boolean sendTouchState(byte[] report) {
+        if (report == null) {
+            if (touchSession) cancelTouchStream(true);
+            return true;
+        }
+        TouchState.mask(report);
+        if (!hasTouchConnection()) {
+            cancelTouchStream(false);
+            setStatus(getString(R.string.touch_connection_required));
+            return false;
+        }
+        if (!touchSession) {
+            cancelTouchStream(false);
+            cancelSignalPlayback();
+            sendAllReleasedState();
+            touchHost = connectedHost;
+            touchSession = true;
+            // Let the host observe the all-up reset before the next session's first contact.
+            touchScheduled = true;
+            mainHandler.postDelayed(nextTouchFrame, TOUCH_SESSION_RESET_MS);
+            Log.i(TAG, "Touch session started generation=" + touchGeneration);
+        }
+        if (!connectedHost.equals(touchHost) || !touchReports.offer(report)) {
+            failTouchStream();
+            return false;
+        }
+        if (!touchScheduled) drainTouchReports();
+        return touchSession;
+    }
+
+    private void drainTouchReports() {
+        touchScheduled = false;
+        if (!touchSession) return;
+        if (!hasTouchConnection() || !connectedHost.equals(touchHost)) {
+            cancelTouchStream(false);
+            return;
+        }
+        byte[] report = touchReports.poll();
+        if (report == null) return;
+        try {
+            if (!transmitTouchReport(touchHost, report)) {
+                failTouchStream();
+                return;
+            }
+            lastTouchReport = report.clone();
+            // Keep a minimum interval even when the queue is empty, so high-rate input is bounded.
+            touchScheduled = true;
+            mainHandler.postDelayed(nextTouchFrame, 16);
+        } catch (SecurityException | IllegalStateException e) {
+            failTouchStream();
+        }
+    }
+
+    private void cancelTouchStream(boolean release) {
+        final int generation = ++touchGeneration;
+        mainHandler.removeCallbacks(nextTouchFrame);
+        if (pendingTouchRelease != null) mainHandler.removeCallbacks(pendingTouchRelease);
+        pendingTouchRelease = null;
+        touchReports.clear();
+        if (release && touchSession && touchHost != null && touchHost.equals(connectedHost) && hasTouchConnection()) {
+            try {
+                lastTouchReport = releasedTouchReport();
+                if (!transmitTouchReport(touchHost, lastTouchReport)) Log.w(TAG, "Touch session release rejected");
+                final BluetoothDevice releasedHost = touchHost;
+                final BluetoothHidDevice releasedDevice = hidDevice;
+                final byte[] releasedReport = TouchState.endFrame(lastTouchReport);
+                pendingTouchRelease = () -> {
+                    if (touchGeneration != generation || touchSession || hidDevice != releasedDevice
+                            || !releasedHost.equals(connectedHost) || !hasTouchConnection()) return;
+                    try {
+                        if (!transmitTouchReport(releasedHost, releasedReport)) Log.w(TAG, "Touch release retry rejected");
+                    } catch (SecurityException | IllegalStateException e) { Log.w(TAG, "Touch release retry failed", e); }
+                };
+                mainHandler.postDelayed(pendingTouchRelease, TOUCH_SESSION_RESET_MS);
+                Log.i(TAG, "Touch session ended generation=" + generation);
+            }
+            catch (SecurityException | IllegalStateException e) { Log.w(TAG, "Touch release failed", e); }
+        }
+        touchSession = false;
+        touchScheduled = false;
+        touchHost = null;
+    }
+
+    private void failTouchStream() {
+        cancelTouchStream(true);
+        try {
+            if (hidDevice != null && connectedHost != null && hasBluetoothConnectPermission()) hidDevice.disconnect(connectedHost);
+        } catch (SecurityException | IllegalStateException e) { Log.w(TAG, "Touch failure disconnect failed", e); }
+        setStatus(getString(R.string.signal_send_failed));
+    }
+
+    private byte[] releasedTouchReport() {
+        byte[] report = lastTouchReport.clone();
+        report[0] = 0;
+        report[6] = 0;
+        return report;
+    }
+
+    protected boolean hasTouchConnection() {
+        return hidDevice != null && connectedHost != null && hasBluetoothConnectPermission();
+    }
+
+    protected boolean transmitTouchReport(BluetoothDevice host, byte[] report) {
+        if (hidDevice == null || !hasBluetoothConnectPermission()) return false;
+        try { return hidDevice.sendReport(host, TouchState.REPORT_ID, report); }
+        catch (SecurityException | IllegalStateException e) {
+            Log.w(TAG, "Touch report could not be sent", e);
+            return false;
+        }
+    }
+
+    public void sendProgram(SignalProgram program) {
+        cancelTouchStream(true);
+        java.util.List<SignalReports.Frame> frames = SignalReports.compile(program);
+        Log.i(TAG, "Queue program: mode=" + program.mode + " steps=" + program.steps.size()
+                + " frames=" + frames.size());
+        if (frames.isEmpty()) {
             setStatus("当前手势未绑定任何输出。");
             return;
         }
@@ -335,24 +517,60 @@ public class HidRemoteService extends Service {
             return;
         }
 
-        try {
-            switch (action.outputType) {
-                case KEYBOARD:
-                    sendKeyboardAction(action);
-                    break;
-                case CONSUMER:
-                    sendConsumerAction(action);
-                    break;
-                default:
-                    setStatus("当前手势未绑定任何输出。");
-                    break;
-            }
-        } catch (SecurityException e) {
-            setStatus("发送失败：缺少蓝牙权限。");
+        if (signalFrames.size() + frames.size() > 512) {
+            setStatus(getString(R.string.signal_queue_full));
+            return;
+        }
+        signalFrames.addAll(frames);
+        if (!playingSignals) {
+            playbackHost = connectedHost;
+            playingSignals = true;
+            drainSignalFrames();
         }
     }
 
+    private void drainSignalFrames() {
+        if (!playingSignals) return;
+        if (hidDevice == null || connectedHost == null || !connectedHost.equals(playbackHost) || !hasBluetoothConnectPermission()) {
+            cancelSignalPlayback();
+            return;
+        }
+        SignalReports.Frame frame = signalFrames.poll();
+        if (frame == null) {
+            cancelSignalPlayback();
+            setStatus(getString(R.string.signal_sent));
+            return;
+        }
+        try {
+            if (!hidDevice.sendReport(playbackHost, frame.reportId, frame.data)) {
+                Log.w(TAG, "sendReport rejected id=" + frame.reportId);
+                cancelSignalPlayback();
+                sendAllReleasedState();
+                setStatus(getString(R.string.signal_send_failed));
+                return;
+            }
+            if (frame.reportId == SignalReports.TOUCH) lastTouchReport = frame.data.clone();
+            mainHandler.postDelayed(nextSignalFrame, frame.delayAfterMs);
+        } catch (SecurityException | IllegalStateException e) {
+            cancelSignalPlayback();
+            sendAllReleasedState();
+            setStatus(getString(R.string.signal_send_failed));
+        }
+    }
+
+    private void cancelSignalPlayback() {
+        mainHandler.removeCallbacks(nextSignalFrame);
+        signalFrames.clear();
+        playbackHost = null;
+        playingSignals = false;
+    }
+
     public void sendKeyboardState(int modifierMask, int[] keyboardUsages) {
+        cancelTouchStream(true);
+        if (playingSignals) {
+            cancelSignalPlayback();
+            sendAllReleasedState();
+        }
         if (hidDevice == null || connectedHost == null || !hasBluetoothConnectPermission()) {
             setStatus("尚未连接目标设备。先配对并连接电脑、电视、平板等 HID 主机。");
             return;
@@ -370,19 +588,6 @@ public class HidRemoteService extends Service {
         return intent;
     }
 
-    private void sendKeyboardAction(HidAction.ActionDefinition action) {
-        byte[] press = buildKeyboardReport(action.modifierMask, action.keyboardUsages);
-        byte[] release = buildKeyboardReport(0, null);
-        try {
-            hidDevice.sendReport(connectedHost, KEYBOARD_REPORT_ID, press);
-        } catch (SecurityException e) {
-            setStatus("发送失败：缺少蓝牙权限。");
-            return;
-        }
-        setStatus("已发送：" + action.label);
-        mainHandler.postDelayed(() -> sendRelease(KEYBOARD_REPORT_ID, release), 35);
-    }
-
     private byte[] buildKeyboardReport(int modifierMask, int[] keyboardUsages) {
         byte[] report = new byte[8];
         report[0] = (byte) (modifierMask & 0xFF);
@@ -394,50 +599,15 @@ public class HidRemoteService extends Service {
         return report;
     }
 
-    private void sendConsumerAction(HidAction.ActionDefinition action) {
-        byte[] press = new byte[]{
-                (byte) (action.consumerUsage & 0xFF),
-                (byte) ((action.consumerUsage >> 8) & 0xFF)
-        };
-        byte[] release = new byte[]{0x00, 0x00};
-        try {
-            hidDevice.sendReport(connectedHost, CONSUMER_REPORT_ID, press);
-        } catch (SecurityException e) {
-            setStatus("发送失败：缺少蓝牙权限。");
-            return;
-        }
-        setStatus("已发送：" + action.label);
-        mainHandler.postDelayed(() -> sendRelease(CONSUMER_REPORT_ID, release), 35);
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-    private void sendRelease(int reportId, byte[] release) {
-        try {
-            if (hidDevice != null && connectedHost != null && hasBluetoothConnectPermission()) {
-                hidDevice.sendReport(connectedHost, reportId, release);
-            }
-        } catch (SecurityException ignored) {
-        }
-    }
-
-    private void sendAllReleasedState() {
+    protected void sendAllReleasedState() {
         if (hidDevice == null || connectedHost == null || !hasBluetoothConnectPermission()) {
             return;
         }
         try {
             hidDevice.sendReport(connectedHost, KEYBOARD_REPORT_ID, buildKeyboardReport(0, null));
             hidDevice.sendReport(connectedHost, CONSUMER_REPORT_ID, new byte[]{0x00, 0x00});
+            lastTouchReport = TouchState.endFrame(lastTouchReport);
+            hidDevice.sendReport(connectedHost, SignalReports.TOUCH, lastTouchReport);
         } catch (SecurityException ignored) {
         }
     }
@@ -464,6 +634,8 @@ public class HidRemoteService extends Service {
     }
 
     private void cleanupBluetooth() {
+        cancelSignalPlayback();
+        cancelTouchStream(false);
         sendAllReleasedState();
         cancelPhoneRumble();
         lastRumbleData = new byte[0];

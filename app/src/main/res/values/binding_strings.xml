@@ -1,0 +1,8 @@
+<resources>
+    <string name="binding_edit_title">Edit action</string>
+    <string name="binding_edit_hint">Choose the trigger gesture and output signal, then tap Done to save.</string>
+    <string name="binding_trigger">Trigger gesture</string>
+    <string name="binding_choose_trigger">Choose trigger gesture</string>
+    <string name="binding_conflict">Another action uses this gesture, or its tap region overlaps.</string>
+    <string name="binding_missing">This action has changed. Close this window and open it again.</string>
+</resources>

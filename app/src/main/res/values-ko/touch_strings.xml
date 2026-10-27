@@ -1,0 +1,16 @@
+<resources>
+    <string name="touch_passthrough">터치 전달</string>
+    <string name="touch_type_hint">한 손가락을 화면 비율로 실시간 전달</string>
+    <string name="touch_output">실시간 터치 · 한 손가락</string>
+    <string name="touch_mapping_hint">터치 영역을 대상 화면의 가로·세로 비율로 매핑합니다. 종횡비가 다르면 경로가 늘어나므로 화면 방향을 맞추세요. 한 손가락 탭, 두 번 탭, 길게 누르기, 드래그를 지원합니다. 손가락을 추가하면 원격 터치를 해제하고 모든 손가락을 뗄 때까지 입력을 멈춥니다. 두 손가락을 모으면 나갑니다. 원격 화면은 표시하지 않습니다.</string>
+    <string name="touch_passthrough_surface">터치 전달 영역</string>
+    <string name="touch_connection_required">터치 연결을 사용할 수 없습니다. 대상 기기를 다시 연결하세요.</string>
+    <string name="touch_exit_hint">두 손가락을 안쪽으로 모아 나가기</string>
+    <string name="touch_back_again">2초 안에 뒤로를 다시 누르면 터치 전달이 종료됩니다</string>
+    <string name="touch_pinning_inactive">화면이 고정되지 않았습니다. Home 오작동 방지는 아직 적용되지 않았습니다.</string>
+    <string name="touch_pinning_stop_failed">화면 고정을 해제하지 못했습니다. 시스템에서 안내한 고정 해제 동작을 사용하세요.</string>
+    <string name="touch_pinning">화면 고정 보호</string>
+    <string name="touch_pinning_hint">선택적인 Home 오작동 방지입니다. 진입 안내는 시스템에서 표시하며 두 손가락으로 나가면 이 앱이 시작한 고정을 해제합니다. 해제 후에도 잠금을 유지하지 않으려면 시스템에서 고정 해제 시 잠금 설정을 제공하는 경우 끄세요.</string>
+    <string name="touch_safe_area">안전 터치 영역</string>
+    <string name="touch_safe_area_hint">안전 범위 안의 가장 큰 3:4 영역을 중앙에 표시하고 대상 화면 전체에 매핑합니다. 프레임 밖에서 시작해도 안으로 들어오는 경계부터 터치가 시작됩니다. 프레임 밖의 탭은 전달하지 않습니다.</string>
+</resources>

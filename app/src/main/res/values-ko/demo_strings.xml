@@ -1,0 +1,33 @@
+<resources>
+    <string name="demo_hold_hint">동작이나 터치 제스처를 길게 누르면 시연을 볼 수 있습니다.</string>
+    <string name="demo_loading">시연 불러오는 중</string>
+    <string name="demo_failed">시연을 불러오지 못했습니다. 다시 시도하세요.</string>
+    <string name="demo_retry">다시 시도</string>
+    <string name="demo_close">시연 닫기</string>
+    <string name="demo_play">재생</string>
+    <string name="demo_pause">일시 정지</string>
+    <string name="demo_replay">처음부터</string>
+    <string name="demo_speed">속도 %1$s</string>
+    <string name="demo_progress">시연 진행 위치</string>
+    <string name="demo_slow">느린 시연 · 시연은 신호를 보내지 않습니다</string>
+    <string name="demo_action_role">이 기기 · 실행 동작</string>
+    <string name="demo_signal_role">대상 기기 · 터치 신호</string>
+    <string name="demo_signal_instruction">대상 기기에 그림의 터치가 전달됩니다. 표시에서 누르고 동작 끝에 뗍니다.</string>
+    <string name="demo_tap_instruction">강조된 영역에서 표시된 수의 손가락으로 가볍게 탭하세요. 매번 모든 손가락을 뗍니다.</string>
+    <string name="demo_swipe_instruction">누른 채 화살표를 따라 움직이고 끝에서 뗍니다.</string>
+    <string name="demo_multi_swipe_instruction">손가락 간격을 유지하며 화살표를 따라 함께 움직인 후 모두 뗍니다.</string>
+    <string name="demo_circle_instruction">한 손가락을 댄 채 표시된 방향으로 원을 그리고 뗍니다.</string>
+    <string name="demo_active_area">%1$s · 활성 영역</string>
+    <string name="demo_contact_legend">채워진 점은 누름, 사라지면 뗌</string>
+    <string name="demo_group_legend">같은 손가락 그룹을 함께 움직이세요</string>
+    <string name="demo_ready">준비</string>
+    <string name="demo_press">누르기</string>
+    <string name="demo_move">화살표 따라 이동</string>
+    <string name="demo_release">떼기</string>
+    <string name="demo_finish">떼고 완료</string>
+    <string name="demo_release_all">모든 손가락 떼기</string>
+    <string name="demo_press_together">함께 누르기</string>
+    <string name="demo_press_step">%1$d 번째 누름</string>
+    <string name="demo_tap_step">%1$d 번째 탭</string>
+    <string name="demo_wait">다음 반복 대기</string>
+</resources>

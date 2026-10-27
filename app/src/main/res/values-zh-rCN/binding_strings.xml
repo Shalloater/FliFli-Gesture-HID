@@ -1,0 +1,8 @@
+<resources>
+    <string name="binding_edit_title">编辑动作</string>
+    <string name="binding_edit_hint">选择触发手势及发送信号，点击完成保存。</string>
+    <string name="binding_trigger">触发手势</string>
+    <string name="binding_choose_trigger">选择触发手势</string>
+    <string name="binding_conflict">该手势已被其他动作使用，或点按区域与其他动作重叠。</string>
+    <string name="binding_missing">该动作已发生变化，请关闭后重新编辑。</string>
+</resources>

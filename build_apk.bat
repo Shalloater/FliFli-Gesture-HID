@@ -1,6 +1,6 @@
 @echo off
 cd /d %~dp0
-call gradlew.bat assembleDebug
+call gradlew.bat :app:assembleDebug
 if errorlevel 1 exit /b 1
 echo.
 set "APK_NAME="

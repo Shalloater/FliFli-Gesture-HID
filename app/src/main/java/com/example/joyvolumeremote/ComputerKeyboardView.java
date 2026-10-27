@@ -51,6 +51,7 @@ import static com.example.joyvolumeremote.KeyboardDefinitions.*;
         private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final TwoFingerExitGesture exitGesture;
         private final RectF exitRect = new RectF();
         private final List<KeyboardRow> rows = new ArrayList<>();
         private final List<KeyboardKey> keys = new ArrayList<>();
@@ -61,9 +62,11 @@ import static com.example.joyvolumeremote.KeyboardDefinitions.*;
         private int lastModifierMask = -1;
         private int[] lastUsages = new int[0];
         private boolean pendingExitTap = false;
+        private boolean exitConsumed;
 
         ComputerKeyboardView(Context context) {
             super(context);
+            exitGesture = new TwoFingerExitGesture(getResources().getDisplayMetrics().density);
             setFocusable(true);
             setClickable(true);
             setBackgroundColor(Color.rgb(8, 10, 14));
@@ -316,6 +319,15 @@ import static com.example.joyvolumeremote.KeyboardDefinitions.*;
         @Override
         public boolean onTouchEvent(MotionEvent event) {
             int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN) exitConsumed = false;
+            if (exitGesture.onTouchEvent(event) == TwoFingerExitGesture.Result.EXIT) {
+                exitConsumed = true;
+                pendingExitTap = false;
+                releaseAllKeys();
+                getParent().requestDisallowInterceptTouchEvent(false);
+                if (disconnectListener != null) post(disconnectListener);
+            }
+            if (exitConsumed) return true;
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                 getParent().requestDisallowInterceptTouchEvent(true);
                 int index = event.getActionIndex();

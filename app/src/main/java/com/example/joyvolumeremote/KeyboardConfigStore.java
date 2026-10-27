@@ -134,6 +134,8 @@ final class KeyboardConfigStore {
         config.backgroundImageUri = object.optString("backgroundImageUri", "");
         config.vibrationEnabled = object.optBoolean("vibrationEnabled", true);
         config.vibrationLevel = object.optInt("vibrationLevel", VIBRATION_MEDIUM);
+        config.screenPinning = object.optBoolean("screenPinning", false);
+        config.safeTouchArea = object.optBoolean("safeTouchArea", KEYBOARD_TYPE_TOUCH_PASSTHROUGH.equals(config.type));
 
         JSONArray bindingsArray = object.optJSONArray("bindings");
         if (bindingsArray != null) {
@@ -161,6 +163,8 @@ final class KeyboardConfigStore {
             object.put("backgroundImageUri", config.backgroundImageUri == null ? "" : config.backgroundImageUri);
             object.put("vibrationEnabled", config.vibrationEnabled);
             object.put("vibrationLevel", config.vibrationLevel);
+            object.put("screenPinning", config.screenPinning);
+            object.put("safeTouchArea", config.safeTouchArea);
             JSONArray bindingsArray = new JSONArray();
             for (GestureBinding binding : config.bindings) {
                 bindingsArray.put(toJson(binding));
@@ -368,6 +372,7 @@ final class KeyboardConfigStore {
         config.id = allocateKeyboardId();
         config.name = nextKeyboardName(type);
         config.type = type;
+        config.safeTouchArea = KEYBOARD_TYPE_TOUCH_PASSTHROUGH.equals(type);
         config.controlMode = CONTROL_MODE_FULLSCREEN;
         config.vibrationEnabled = true;
         config.vibrationLevel = VIBRATION_MEDIUM;
@@ -412,13 +417,15 @@ final class KeyboardConfigStore {
     }
 
     private String keyboardTypeLabel(String type) {
+        if (KEYBOARD_TYPE_TOUCH_PASSTHROUGH.equals(type)) return text(R.string.touch_passthrough, "触控透传");
         if (KEYBOARD_TYPE_COMPUTER.equals(type)) return text(R.string.ui_computer_keyboard, "电脑键盘");
-        return text(R.string.ui_gesture_keyboard, "全屏手势键盘");
+        return text(R.string.ui_gesture_keyboard, "手势键盘");
     }
 
     private boolean isKnownKeyboardType(String type) {
         return KEYBOARD_TYPE_FULLSCREEN_GESTURE.equals(type)
-                || KEYBOARD_TYPE_COMPUTER.equals(type);
+                || KEYBOARD_TYPE_COMPUTER.equals(type)
+                || KEYBOARD_TYPE_TOUCH_PASSTHROUGH.equals(type);
     }
 
 }

@@ -1,32 +1,22 @@
 package com.example.joyvolumeremote;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Looper;
-import android.net.Uri;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 
 import java.util.ArrayList;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.util.List;
 
 import static com.example.joyvolumeremote.KeyboardDefinitions.*;
 import static com.example.joyvolumeremote.GestureRules.*;
 
-    final class KeyPadView extends View {
+    final class KeyPadView extends TouchBackgroundView {
         private static final float SWIPE_THRESHOLD_DP = 56f;
-        private static final float PINCH_THRESHOLD_DP = 42f;
         private static final float MULTI_TAP_DISTANCE_DP = 64f;
         private static final float TAP_SLOP_DP = 28f;
         private static final float CIRCLE_MIN_DIAMETER_DP = 54f;
@@ -36,9 +26,11 @@ import static com.example.joyvolumeremote.GestureRules.*;
         private final ArrayList<GestureBinding> gestureBindings = new ArrayList<>();
         private final ArrayList<Float> pathXs = new ArrayList<>();
         private final ArrayList<Float> pathYs = new ArrayList<>();
-        private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG | Paint.DITHER_FLAG);
-        private final RectF backgroundDest = new RectF();
-        private Bitmap backgroundBitmap;
+        private final TwoFingerExitGesture exitGesture;
+        private final GestureStroke stroke = new GestureStroke();
+        private boolean exitConsumed;
+        private boolean tracking;
+        private long strokeDownTime, pendingTapUpTime;
         private TriggerListener listener;
         private Runnable disconnectListener;
         private float downX;
@@ -47,29 +39,18 @@ import static com.example.joyvolumeremote.GestureRules.*;
         private float lastY;
         private float pendingTapX;
         private float pendingTapY;
-        private float initialPinchDistance;
         private Runnable pendingTap;
         private int pendingTapFingers = 0;
         private int pendingTapCount = 0;
-        private int maxPointerCount = 1;
-        private boolean trackingPinch = false;
-        private boolean pinchHandled = false;
         private boolean vibrationEnabled = true;
         private int vibrationLevel = VIBRATION_MEDIUM;
 
         public KeyPadView(Context context) {
             super(context);
+            exitGesture = new TwoFingerExitGesture(getResources().getDisplayMetrics().density);
             setFocusable(true);
             setClickable(true);
             setBackgroundColor(Color.BLACK);
-        }
-
-        public void setBackgroundImageUri(String rawUri) {
-            clearBackgroundBitmap();
-            if (rawUri != null && !rawUri.trim().isEmpty()) {
-                backgroundBitmap = loadScaledBackgroundBitmap(rawUri.trim());
-            }
-            invalidate();
         }
 
         public void setTriggerListener(TriggerListener listener) {
@@ -89,6 +70,7 @@ import static com.example.joyvolumeremote.GestureRules.*;
         }
 
         public void setGestureBindings(List<GestureBinding> bindings) {
+            cancelPendingTap(); tracking = false; stroke.clear(); exitGesture.reset();
             gestureBindings.clear();
             if (bindings == null) return;
             for (GestureBinding binding : bindings) {
@@ -97,127 +79,60 @@ import static com.example.joyvolumeremote.GestureRules.*;
         }
 
         @Override
-        protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            if (backgroundBitmap == null || backgroundBitmap.isRecycled()) return;
-            float viewWidth = getWidth();
-            float viewHeight = getHeight();
-            float bitmapWidth = backgroundBitmap.getWidth();
-            float bitmapHeight = backgroundBitmap.getHeight();
-            if (viewWidth <= 0f || viewHeight <= 0f || bitmapWidth <= 0f || bitmapHeight <= 0f) return;
-
-            float scale = Math.max(viewWidth / bitmapWidth, viewHeight / bitmapHeight);
-            float drawWidth = bitmapWidth * scale;
-            float drawHeight = bitmapHeight * scale;
-            float left = (viewWidth - drawWidth) * 0.5f;
-            float top = (viewHeight - drawHeight) * 0.5f;
-            backgroundDest.set(left, top, left + drawWidth, top + drawHeight);
-            canvas.drawBitmap(backgroundBitmap, null, backgroundDest, backgroundPaint);
-        }
-
-        private Bitmap loadScaledBackgroundBitmap(String rawUri) {
-            try {
-                Uri uri = Uri.parse(rawUri);
-                int targetWidth = Math.max(1, getResources().getDisplayMetrics().widthPixels);
-                int targetHeight = Math.max(1, getResources().getDisplayMetrics().heightPixels);
-
-                BitmapFactory.Options bounds = new BitmapFactory.Options();
-                bounds.inJustDecodeBounds = true;
-                try (InputStream input = openBackgroundInputStream(uri)) {
-                    BitmapFactory.decodeStream(input, null, bounds);
-                }
-                if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
-
-                int sampleSize = 1;
-                while ((bounds.outWidth / sampleSize) > targetWidth * 2
-                        || (bounds.outHeight / sampleSize) > targetHeight * 2) {
-                    sampleSize *= 2;
-                }
-
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inSampleSize = sampleSize;
-                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                try (InputStream input = openBackgroundInputStream(uri)) {
-                    return BitmapFactory.decodeStream(input, null, options);
-                }
-            } catch (Exception ignored) {
-                return null;
-            }
-        }
-
-        private InputStream openBackgroundInputStream(Uri uri) throws Exception {
-            if ("file".equals(uri.getScheme())) {
-                return new FileInputStream(new File(uri.getPath()));
-            }
-            return getContext().getContentResolver().openInputStream(uri);
-        }
-
-        private void clearBackgroundBitmap() {
-            if (backgroundBitmap != null && !backgroundBitmap.isRecycled()) {
-                backgroundBitmap.recycle();
-            }
-            backgroundBitmap = null;
-        }
-
-        @Override
         public boolean onTouchEvent(MotionEvent event) {
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) exitConsumed = false;
+            TwoFingerExitGesture.Result exit = exitGesture.onTouchEvent(event);
+            if (exit == TwoFingerExitGesture.Result.EXIT) {
+                exitConsumed = true;
+                tracking = false; stroke.clear();
+                cancelPendingTap();
+                vibrate(HapticFeedbackConstants.LONG_PRESS);
+                if (disconnectListener != null) disconnectListener.run();
+            }
+            if (exitConsumed) return true;
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    if (pendingTap != null) {
+                        if (event.getEventTime() - pendingTapUpTime <= ViewConfiguration.getDoubleTapTimeout()) {
+                            tapHandler.removeCallbacks(pendingTap);
+                            tapHandler.postDelayed(pendingTap, ViewConfiguration.getLongPressTimeout());
+                        } else flushPendingTap();
+                    }
                     beginGesture(event);
-                    trackingPinch = false;
-                    pinchHandled = false;
                     return true;
                 case MotionEvent.ACTION_POINTER_DOWN:
-                    maxPointerCount = Math.max(maxPointerCount, event.getPointerCount());
-                    if (event.getPointerCount() >= 2) {
-                        initialPinchDistance = distanceBetweenFirstTwoPointers(event);
-                        trackingPinch = true;
-                        pinchHandled = false;
-                    }
+                    if (!tracking) return true;
+                    updateStroke(event);
+                    int pressed = event.getActionIndex();
+                    stroke.press(event.getPointerId(pressed), event.getX(pressed), event.getY(pressed));
                     return true;
                 case MotionEvent.ACTION_MOVE:
-                    maxPointerCount = Math.max(maxPointerCount, event.getPointerCount());
-                    updateLastCentroid(event);
-                    if (event.getPointerCount() == 1 && maxPointerCount == 1) {
-                        appendPathPoint(lastX, lastY);
-                    }
-                    if (trackingPinch && event.getPointerCount() >= 2 && !pinchHandled) {
-                        float currentDistance = distanceBetweenFirstTwoPointers(event);
-                        float threshold = PINCH_THRESHOLD_DP * getResources().getDisplayMetrics().density;
-                        if (initialPinchDistance - currentDistance > threshold) {
-                            pinchHandled = true;
-                            cancelPendingTap();
-                            vibrate(HapticFeedbackConstants.LONG_PRESS);
-                            if (disconnectListener != null) disconnectListener.run();
-                        }
-                    }
+                    if (tracking) updateStroke(event);
                     return true;
                 case MotionEvent.ACTION_POINTER_UP:
-                    maxPointerCount = Math.max(maxPointerCount, event.getPointerCount());
-                    updateLastCentroid(event);
+                    if (!tracking) return true;
+                    updateStroke(event);
+                    stroke.lift(event.getPointerId(event.getActionIndex()));
                     return true;
                 case MotionEvent.ACTION_UP:
-                    updateLastCentroid(event);
-                    if (maxPointerCount == 1) appendPathPoint(lastX, lastY);
-                    if (!pinchHandled) {
-                        handleCompletedGesture();
-                    }
-                    trackingPinch = false;
+                    if (!tracking) return true;
+                    updateStroke(event);
+                    stroke.lift(event.getPointerId(event.getActionIndex()));
+                    tracking = false;
+                    handleCompletedGesture(event.getEventTime());
                     return true;
                 case MotionEvent.ACTION_CANCEL:
+                    tracking = false; stroke.clear(); exitGesture.reset();
                     cancelPendingTap();
-                    trackingPinch = false;
-                    pinchHandled = false;
                     return true;
             }
             return true;
         }
 
         private void beginGesture(MotionEvent event) {
-            maxPointerCount = event.getPointerCount();
-            float[] centroid = centroid(event);
-            downX = centroid[0];
-            downY = centroid[1];
+            tracking = true; strokeDownTime = event.getEventTime();
+            stroke.clear(); stroke.press(event.getPointerId(0), event.getX(), event.getY());
+            downX = event.getX(); downY = event.getY();
             lastX = downX;
             lastY = downY;
             pathXs.clear();
@@ -225,21 +140,16 @@ import static com.example.joyvolumeremote.GestureRules.*;
             appendPathPoint(downX, downY);
         }
 
-        private void updateLastCentroid(MotionEvent event) {
-            float[] centroid = centroid(event);
-            lastX = centroid[0];
-            lastY = centroid[1];
-        }
-
-        private float[] centroid(MotionEvent event) {
-            int count = Math.max(1, event.getPointerCount());
-            float x = 0f;
-            float y = 0f;
-            for (int i = 0; i < count; i++) {
-                x += event.getX(i);
-                y += event.getY(i);
+        private void updateStroke(MotionEvent event) {
+            for (int sample = 0; sample <= event.getHistorySize(); sample++) {
+                boolean current = sample == event.getHistorySize();
+                for (int i = 0; i < event.getPointerCount(); i++) stroke.move(event.getPointerId(i),
+                        current ? event.getX(i) : event.getHistoricalX(i, sample),
+                        current ? event.getY(i) : event.getHistoricalY(i, sample));
+                downX = stroke.startX(); downY = stroke.startY();
+                lastX = stroke.x(); lastY = stroke.y();
+                if (stroke.fingers() == 1) appendPathPoint(lastX, lastY);
             }
-            return new float[]{x / count, y / count};
         }
 
         private void appendPathPoint(float x, float y) {
@@ -254,26 +164,27 @@ import static com.example.joyvolumeremote.GestureRules.*;
             pathYs.add(y);
         }
 
-        private void handleCompletedGesture() {
+        private void handleCompletedGesture(long upTime) {
+            if (!stroke.consistent()) { flushPendingTap(); return; }
             float dx = lastX - downX;
             float dy = lastY - downY;
             String circleMotion = detectCircleMotion();
             if (circleMotion != null) {
-                cancelPendingTap();
+                flushPendingTap();
                 sendMotion(1, circleMotion);
                 return;
             }
 
             if (isSwipe(dx, dy)) {
-                cancelPendingTap();
-                sendMotion(maxPointerCount, resolveSwipeMotion(dx, dy));
+                flushPendingTap();
+                sendMotion(stroke.fingers(), resolveSwipeMotion(dx, dy));
                 return;
             }
 
             float tapSlop = TAP_SLOP_DP * getResources().getDisplayMetrics().density;
-            if (Math.abs(dx) <= tapSlop && Math.abs(dy) <= tapSlop) {
-                handleTap(maxPointerCount, lastX, lastY);
-            }
+            if (stroke.maxMovement() <= tapSlop && upTime - strokeDownTime <= ViewConfiguration.getLongPressTimeout())
+                handleTap(stroke.fingers(), stroke.startX(), stroke.startY(), upTime);
+            else flushPendingTap();
         }
 
         private boolean isSwipe(float dx, float dy) {
@@ -288,14 +199,16 @@ import static com.example.joyvolumeremote.GestureRules.*;
             return dy > 0 ? MOTION_SWIPE_DOWN : MOTION_SWIPE_UP;
         }
 
-        private void handleTap(int fingers, float x, float y) {
+        private void handleTap(int fingers, float x, float y, long upTime) {
             float maxDistance = MULTI_TAP_DISTANCE_DP * getResources().getDisplayMetrics().density;
             boolean continuesPending = pendingTap != null
                     && pendingTapFingers == fingers
-                    && distance(x, y, pendingTapX, pendingTapY) <= maxDistance;
+                    && strokeDownTime - pendingTapUpTime <= ViewConfiguration.getDoubleTapTimeout()
+                    && distance(x, y, pendingTapX, pendingTapY) <= maxDistance
+                    && hasLaterTap(fingers, pendingTapCount, pendingTapX, pendingTapY, x, y);
 
             if (!continuesPending) {
-                cancelPendingTap();
+                flushPendingTap();
                 pendingTapFingers = fingers;
                 pendingTapCount = 1;
             } else {
@@ -303,12 +216,13 @@ import static com.example.joyvolumeremote.GestureRules.*;
                 pendingTapCount++;
             }
 
-            pendingTapX = x;
-            pendingTapY = y;
-            if (pendingTapCount >= 3) {
+            if (!continuesPending) { pendingTapX = x; pendingTapY = y; }
+            pendingTapUpTime = upTime;
+            if (pendingTapCount >= 3 || !hasLaterTap(fingers, pendingTapCount, pendingTapX, pendingTapY, x, y)) {
                 int tapCount = pendingTapCount;
+                float tapX = pendingTapX, tapY = pendingTapY;
                 cancelPendingTap();
-                emitTap(fingers, tapCount, x, y);
+                emitTap(fingers, tapCount, tapX, tapY);
                 return;
             }
 
@@ -323,6 +237,23 @@ import static com.example.joyvolumeremote.GestureRules.*;
                 emitTap(tapFingers, tapCount, tapX, tapY);
             };
             tapHandler.postDelayed(pendingTap, ViewConfiguration.getDoubleTapTimeout());
+        }
+
+        private boolean hasLaterTap(int fingers, int count, float firstX, float firstY, float x, float y) {
+            if (getWidth() <= 0 || getHeight() <= 0) return false;
+            for (GestureBinding binding : gestureBindings)
+                if (GESTURE_KIND_TAP.equals(binding.kind) && binding.fingers == fingers && binding.tapCount > count
+                        && tapAreaContains(binding.area, firstX / getWidth(), firstY / getHeight())
+                        && tapAreaContains(binding.area, x / getWidth(), y / getHeight())) return true;
+            return false;
+        }
+
+        private void flushPendingTap() {
+            if (pendingTap == null) return;
+            int fingers = pendingTapFingers, count = pendingTapCount;
+            float x = pendingTapX, y = pendingTapY;
+            cancelPendingTap();
+            emitTap(fingers, count, x, y);
         }
 
         private void emitTap(int fingers, int tapCount, float x, float y) {
@@ -365,12 +296,6 @@ import static com.example.joyvolumeremote.GestureRules.*;
             pendingTapFingers = 0;
         }
 
-        private float distanceBetweenFirstTwoPointers(MotionEvent event) {
-            float dx = event.getX(0) - event.getX(1);
-            float dy = event.getY(0) - event.getY(1);
-            return (float) Math.sqrt(dx * dx + dy * dy);
-        }
-
         private float distance(float x1, float y1, float x2, float y2) {
             float dx = x1 - x2;
             float dy = y1 - y2;
@@ -378,7 +303,7 @@ import static com.example.joyvolumeremote.GestureRules.*;
         }
 
         private String detectCircleMotion() {
-            if (maxPointerCount != 1 || pathXs.size() < 8) return null;
+            if (stroke.fingers() != 1 || pathXs.size() < 8) return null;
             float minX = Float.MAX_VALUE;
             float minY = Float.MAX_VALUE;
             float maxX = -Float.MAX_VALUE;
@@ -432,9 +357,16 @@ import static com.example.joyvolumeremote.GestureRules.*;
         }
 
         @Override
+        public void onWindowFocusChanged(boolean focused) {
+            if (!focused) { tracking = false; stroke.clear(); cancelPendingTap(); exitGesture.reset(); }
+            super.onWindowFocusChanged(focused);
+        }
+
+        @Override
         protected void onDetachedFromWindow() {
+            tracking = false; stroke.clear();
             cancelPendingTap();
-            clearBackgroundBitmap();
+            exitGesture.reset();
             super.onDetachedFromWindow();
         }
 

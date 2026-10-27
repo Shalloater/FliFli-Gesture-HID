@@ -1,0 +1,8 @@
+<resources>
+    <string name="binding_edit_title">操作を編集</string>
+    <string name="binding_edit_hint">入力ジェスチャーと送信する信号を選び、完了で保存します。</string>
+    <string name="binding_trigger">入力ジェスチャー</string>
+    <string name="binding_choose_trigger">入力ジェスチャーを選択</string>
+    <string name="binding_conflict">このジェスチャーは使用済みか、タップ領域が別の操作と重なっています。</string>
+    <string name="binding_missing">この操作は変更されました。閉じてから開き直してください。</string>
+</resources>

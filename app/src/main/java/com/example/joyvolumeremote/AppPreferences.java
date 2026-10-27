@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.os.Build;
 import java.util.Locale;
 
 /** Appearance and language preferences are independent of keyboard configurations. */
@@ -37,7 +38,8 @@ final class AppPreferences {
     String language() {
         String saved = preferences.getString("language", "");
         if (!saved.isEmpty()) return saved;
-        Locale locale = context.getResources().getConfiguration().getLocales().get(0);
+        Configuration configuration = context.getResources().getConfiguration();
+        Locale locale = Build.VERSION.SDK_INT >= 24 ? configuration.getLocales().get(0) : configuration.locale;
         if (locale.getLanguage().equals("zh")) {
             return locale.getCountry().equals("TW") || locale.getCountry().equals("HK")
                     || locale.getScript().equals("Hant") ? "zh-TW" : "zh-CN";

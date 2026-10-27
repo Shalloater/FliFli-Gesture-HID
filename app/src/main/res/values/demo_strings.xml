@@ -1,0 +1,33 @@
+<resources>
+    <string name="demo_hold_hint">Long press a gesture to see its demo.</string>
+    <string name="demo_loading">Loading demo</string>
+    <string name="demo_failed">Could not load this demo. Please try again.</string>
+    <string name="demo_retry">Retry</string>
+    <string name="demo_close">Close demo</string>
+    <string name="demo_play">Play</string>
+    <string name="demo_pause">Pause</string>
+    <string name="demo_replay">Replay</string>
+    <string name="demo_speed">Speed %1$s</string>
+    <string name="demo_progress">Demo progress</string>
+    <string name="demo_slow">Slowed demonstration · Viewing sends no input</string>
+    <string name="demo_action_role">This device · Trigger gesture</string>
+    <string name="demo_signal_role">Target device · Touch signal</string>
+    <string name="demo_signal_instruction">The target receives the contact shown, starting at the marker and lifting at the end.</string>
+    <string name="demo_tap_instruction">Tap in the highlighted area with the fingers shown. Lift all fingers between taps.</string>
+    <string name="demo_swipe_instruction">Touch down and follow the arrow, then lift.</string>
+    <string name="demo_multi_swipe_instruction">Keep the fingers apart and move together along the arrows, then lift all fingers.</string>
+    <string name="demo_circle_instruction">Keep one finger down, draw a circle in the direction shown, then lift.</string>
+    <string name="demo_active_area">%1$s · Active area</string>
+    <string name="demo_contact_legend">Solid contact: down. Fading contact: up.</string>
+    <string name="demo_group_legend">Move these fingers together</string>
+    <string name="demo_ready">Ready</string>
+    <string name="demo_press">Touch down</string>
+    <string name="demo_move">Follow the arrow</string>
+    <string name="demo_release">Lift</string>
+    <string name="demo_finish">Lift · Done</string>
+    <string name="demo_release_all">Lift all fingers</string>
+    <string name="demo_press_together">Touch down together</string>
+    <string name="demo_press_step">Touch %1$d</string>
+    <string name="demo_tap_step">Tap %1$d</string>
+    <string name="demo_wait">Next loop soon</string>
+</resources>

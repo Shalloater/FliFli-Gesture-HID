@@ -28,7 +28,7 @@
     <string name="ui_custom_keyboards">"사용자 키보드"</string>
     <string name="ui_add">"추가"</string>
     <string name="ui_no_keyboards_yet_tap_add_to_create_one">"추가를 눌러 키보드를 만드세요."</string>
-    <string name="ui_gesture_keyboard">"전체 화면 제스처 키보드"</string>
+    <string name="ui_gesture_keyboard">"제스처 키보드"</string>
     <string name="ui_computer_keyboard">"컴퓨터 키보드"</string>
     <string name="ui_ready_to_create_and_use">"만들고 사용할 수 있습니다"</string>
     <string name="ui_available">"사용 가능"</string>
@@ -50,10 +50,8 @@
     <string name="ui_off">"꺼짐"</string>
     <string name="ui_vibration_strength">"진동 강도"</string>
     <string name="ui_gestures">"제스처"</string>
-    <string name="ui_add_a_tap_or_swipe_then_choose_the_signal_it_sends">"탭 또는 스와이프를 추가하고 전송할 신호를 선택하세요."</string>
+    <string name="ui_add_a_tap_or_swipe_then_choose_the_signal_it_sends">"동작 추가에서 탭 또는 스와이프를 선택하고 전송할 신호를 설정하세요."</string>
     <string name="ui_no_gestures_yet_add_a_tap_or_swipe">"탭 또는 스와이프를 추가하세요."</string>
-    <string name="ui_add_tap">"탭 추가"</string>
-    <string name="ui_add_swipe">"스와이프 추가"</string>
     <string name="ui_layout">"레이아웃"</string>
     <string name="ui_orientation">"화면 방향"</string>
     <string name="ui_output">"출력 신호"</string>
@@ -77,9 +75,7 @@
     <string name="ui_could_not_crop_image">"자르기 실패"</string>
     <string name="ui_could_not_save_background">"배경 저장 실패"</string>
     <string name="ui_background_saved">"배경 저장됨"</string>
-    <string name="ui_choose_tap_gesture">"탭 제스처 선택"</string>
     <string name="ui_tap_gesture">"탭 제스처"</string>
-    <string name="ui_choose_swipe_gesture">"스와이프 선택"</string>
     <string name="ui_full_screen_gesture">"전체 화면 제스처"</string>
     <string name="ui_already_configured">"이미 설정됨"</string>
     <string name="ui_configured">"설정됨"</string>
@@ -174,10 +170,10 @@
     <string name="action_down">"아래쪽 화살표"</string>
     <string name="action_left">"왼쪽 화살표"</string>
     <string name="action_right">"오른쪽 화살표"</string>
-    <string name="action_volume_up">"볼륨 높이기"</string>
-    <string name="action_volume_down">"볼륨 낮추기"</string>
+    <string name="action_volume_up">"볼륨+"</string>
+    <string name="action_volume_down">"볼륨-"</string>
     <string name="action_mute">"음소거"</string>
-    <string name="action_power">"전원 (실험적)"</string>
+    <string name="action_power">"전원"</string>
     <string name="action_play">"재생 / 일시 정지"</string>
     <string name="action_next">"다음 곡"</string>
     <string name="action_previous">"이전 곡"</string>

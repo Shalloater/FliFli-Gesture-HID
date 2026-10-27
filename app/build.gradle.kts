@@ -5,19 +5,23 @@ plugins {
 android {
     namespace = "com.example.joyvolumeremote"
     compileSdk = 35
+    useLibrary("android.test.runner", false)
+    useLibrary("android.test.base", false)
 
     defaultConfig {
         applicationId = "com.example.joyvolumeremote"
         minSdk = 28
         targetSdk = 35
-        versionCode = 10
-        versionName = "1.5.4"
+        versionCode = 23
+        versionName = "1.5.17"
+        testInstrumentationRunner = "android.test.InstrumentationTestRunner"
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    sourceSets.getByName("main").java.srcDir("src/classic/java")
     bundle {
         language {
             enableSplit = false

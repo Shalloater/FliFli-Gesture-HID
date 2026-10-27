@@ -9,6 +9,7 @@ final class KeyboardDefinitions {
     static final String CONTROL_MODE_FULLSCREEN = "fullscreen";
     static final String KEYBOARD_TYPE_FULLSCREEN_GESTURE = "fullscreen_gesture";
     static final String KEYBOARD_TYPE_COMPUTER = "computer_keyboard";
+    static final String KEYBOARD_TYPE_TOUCH_PASSTHROUGH = "touch_passthrough";
     static final String GESTURE_KIND_TAP = "tap";
     static final String GESTURE_KIND_MOTION = "motion";
     static final String TAP_AREA_FULL = "full";

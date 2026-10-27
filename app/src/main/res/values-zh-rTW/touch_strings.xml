@@ -1,0 +1,16 @@
+<resources>
+    <string name="touch_passthrough">觸控透傳</string>
+    <string name="touch_type_hint">單指按螢幕比例即時跟隨</string>
+    <string name="touch_output">即時觸控 · 單指</string>
+    <string name="touch_mapping_hint">將觸控區域按寬、高比例映射到目標螢幕；長寬比不同時軌跡會拉伸，建議兩端使用相同方向。支援單指點擊、雙擊、長按和拖動。增加手指時釋放遠端觸點並暫停輸入，抬起所有手指後可繼續。雙指向內捏合離開，不顯示遠端畫面。</string>
+    <string name="touch_passthrough_surface">觸控透傳區域</string>
+    <string name="touch_connection_required">觸控連線無法使用，請重新連線目標裝置。</string>
+    <string name="touch_exit_hint">雙指向內捏合離開</string>
+    <string name="touch_back_again">2 秒內再次返回，離開觸控透傳</string>
+    <string name="touch_pinning_inactive">螢幕固定未開啟，Home 防誤觸保護尚未生效。</string>
+    <string name="touch_pinning_stop_failed">未能解除螢幕固定，請使用系統提示的取消固定手勢。</string>
+    <string name="touch_pinning">螢幕固定保護</string>
+    <string name="touch_pinning_hint">可選的 Home 防誤觸保護；進入提示由系統顯示，雙指離開時解除本應用程式開啟的固定。若解除後鎖定螢幕，可在系統螢幕固定設定中關閉「解除固定時鎖定裝置」或「要求解鎖」（如系統提供）。</string>
+    <string name="touch_safe_area">安全觸控區</string>
+    <string name="touch_safe_area_hint">系統安全範圍內最大的 3:4 區域，置中映射目標全螢幕。可從框外起滑，軌跡進入框內時才從邊界開始觸摸；框外點擊不生效。</string>
+</resources>

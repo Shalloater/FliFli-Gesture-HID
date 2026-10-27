@@ -50,10 +50,8 @@
     <string name="ui_off">"Off"</string>
     <string name="ui_vibration_strength">"Vibration strength"</string>
     <string name="ui_gestures">"Gestures"</string>
-    <string name="ui_add_a_tap_or_swipe_then_choose_the_signal_it_sends">"Add a tap or swipe, then choose the signal it sends."</string>
+    <string name="ui_add_a_tap_or_swipe_then_choose_the_signal_it_sends">"Use Add action to choose a tap or swipe, then select its signals."</string>
     <string name="ui_no_gestures_yet_add_a_tap_or_swipe">"No gestures yet. Add a tap or swipe."</string>
-    <string name="ui_add_tap">"Add tap"</string>
-    <string name="ui_add_swipe">"Add swipe"</string>
     <string name="ui_layout">"Layout"</string>
     <string name="ui_orientation">"Orientation"</string>
     <string name="ui_output">"Output"</string>
@@ -77,9 +75,7 @@
     <string name="ui_could_not_crop_image">"Could not crop image"</string>
     <string name="ui_could_not_save_background">"Could not save background"</string>
     <string name="ui_background_saved">"Background saved"</string>
-    <string name="ui_choose_tap_gesture">"Choose tap gesture"</string>
     <string name="ui_tap_gesture">"Tap gesture"</string>
-    <string name="ui_choose_swipe_gesture">"Choose swipe gesture"</string>
     <string name="ui_full_screen_gesture">"Full-screen gesture"</string>
     <string name="ui_already_configured">"Already configured"</string>
     <string name="ui_configured">"Configured"</string>
@@ -174,10 +170,10 @@
     <string name="action_down">"Arrow down"</string>
     <string name="action_left">"Arrow left"</string>
     <string name="action_right">"Arrow right"</string>
-    <string name="action_volume_up">"Volume up"</string>
-    <string name="action_volume_down">"Volume down"</string>
+    <string name="action_volume_up">"Volume+"</string>
+    <string name="action_volume_down">"Volume-"</string>
     <string name="action_mute">"Mute"</string>
-    <string name="action_power">"Power (experimental)"</string>
+    <string name="action_power">"Power"</string>
     <string name="action_play">"Play / pause"</string>
     <string name="action_next">"Next track"</string>
     <string name="action_previous">"Previous track"</string>

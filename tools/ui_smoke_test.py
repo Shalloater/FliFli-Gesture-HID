@@ -1,7 +1,7 @@
 """Exercise the installed debug app through Android accessibility/UI and ADB.
 
 Run only against a test emulator. It changes this app's language and theme.
-Usage: python tools/ui_smoke_test.py [emulator-5556]
+Usage: python tools/ui_smoke_test.py [emulator-5556] [package]
 """
 import json
 import re
@@ -13,8 +13,9 @@ from pathlib import Path
 sys.stdout.reconfigure(encoding='utf-8')
 
 ADB = ['D:/Android/Sdk/platform-tools/adb.exe', '-s', sys.argv[1] if len(sys.argv) > 1 else 'emulator-5556']
-PACKAGE = 'com.example.joyvolumeremote'
-OUT = Path(__file__).resolve().parents[1] / 'app/build/ui-review'
+PACKAGE = sys.argv[2] if len(sys.argv) > 2 else 'com.example.joyvolumeremote'
+ACTIVITY = PACKAGE + '/com.example.joyvolumeremote.MainActivity'
+OUT = Path(__file__).resolve().parents[1] / ('compat' if PACKAGE.endswith('.blecompat') else 'app') / 'build/ui-review'
 OUT.mkdir(parents=True, exist_ok=True)
 results = []
 
@@ -42,8 +43,11 @@ def capture(name, expected):
     results.append(name)
     print('PASS', name, flush=True)
 
+adb('shell', 'wm', 'size', '1080x2400')
+adb('shell', 'wm', 'density', '420')
+adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
 adb('shell', 'am', 'force-stop', PACKAGE)
-adb('shell', 'am', 'start', '-n', PACKAGE+'/.MainActivity')
+adb('shell', 'am', 'start', '-n', ACTIVITY)
 time.sleep(1)
 visible = [n.get('text') for n in tree().iter('node')]
 settings_label = next(label for label in ['Settings', '设置', '設定', '설정'] if label in visible)
@@ -75,7 +79,8 @@ tap('简体中文')
 adb('shell', 'am', 'force-stop', PACKAGE)
 adb('shell', 'am', 'start', '-n', PACKAGE+'/.LauncherPurple')
 time.sleep(1)
-capture('home-zh-purple', ['首页', '未连接设备'])
+idle_title = '翻翻 · BLE HID' if PACKAGE.endswith('.blecompat') else '未连接设备'
+capture('home-zh-purple', ['首页', idle_title])
 tap('连接')
 capture('connection-zh', ['连接', '已配对设备'])
 tap('设置')
@@ -88,7 +93,7 @@ adb('shell', 'settings', 'put', 'system', 'font_scale', '1.3')
 time.sleep(1)
 capture('small-large-text-settings', ['皮肤', '语言'])
 tap('首页')
-capture('small-large-text-home', ['首页', '未连接设备'])
+capture('small-large-text-home', ['首页', idle_title])
 adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
 adb('shell', 'wm', 'size', '1080x2400')
 adb('shell', 'wm', 'density', '420')

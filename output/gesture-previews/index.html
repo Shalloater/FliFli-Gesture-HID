@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FliFli · 手势演示预览</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='10' fill='%23d5c7f2'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='sans-serif' font-size='22' fill='%23604985'%3EF%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="shell">
+  <header class="header">
+    <div><div class="brand"><span class="brand-mark">F</span> FliFli <span class="eyebrow">交互演示</span></div><h1>让每个动作，一看就懂。</h1><p class="intro">先查看动作，再决定如何呈现。点选条目播放，长按条目可放大预览。</p></div>
+    <div class="header-tools"><span class="review-badge">已接入 App · 1.5.16</span><div id="themes" class="themes" aria-label="预览皮肤"></div></div>
+  </header>
+  <nav class="kind-tabs" role="tablist" aria-label="演示类型">
+    <button id="signals-tab" role="tab" aria-selected="true" aria-controls="workspace" data-kind="signal">触控手势信号 <span>18</span></button>
+    <button id="actions-tab" role="tab" aria-selected="false" aria-controls="workspace" data-kind="action">触发动作 <span>59</span></button>
+  </nav>
+  <div class="workspace" id="workspace">
+    <aside class="catalog" aria-label="选择演示">
+      <div class="catalog-heading"><h2 id="catalog-title">受控端收到的触摸</h2><span id="result-count" class="count"></span></div>
+      <div class="filters" id="filters" aria-label="动作分类"></div>
+      <div class="area-field" id="area-field" hidden><label for="area">点按区域</label><select id="area"><option value="full">全屏</option><option value="left">左半屏</option><option value="right">右半屏</option><option value="top">上半屏</option><option value="bottom">下半屏</option></select></div>
+      <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="查找动作名称" aria-label="查找动作名称" autocomplete="off"></label>
+      <div class="catalog-list" id="catalog-list"></div>
+      <p class="catalog-note" id="catalog-note">演示受控屏幕上的触点，不代表某款设备绑定的具体功能。</p>
+    </aside>
+    <section class="viewer" aria-labelledby="demo-name">
+      <div class="viewer-heading"><div><div id="demo-role" class="eyebrow"></div><h2 id="demo-name"></h2></div><button id="expand" class="icon-button" aria-label="放大预览" title="放大预览">⤢</button></div>
+      <p id="description" class="description"></p>
+      <div id="stage" class="stage"></div>
+      <div class="playback">
+        <button id="play" class="primary" aria-label="暂停动画">暂停</button><button id="replay" class="secondary">重播</button>
+        <label class="speed">速度<select id="speed" aria-label="动画速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option></select></label>
+        <span class="slow-tag">教学慢放</span>
+      </div>
+      <label class="timeline"><span class="sr-only">演示进度</span><input type="range" id="timeline" min="0" max="3.2" step="0.01" value="0" aria-label="演示进度"><output id="time">0.0 / 3.2 秒</output></label>
+      <div class="viewer-footer"><p id="detail"></p><a id="download" download>下载此 SVG <span aria-hidden="true">↗</span></a></div>
+    </section>
+  </div>
+  <footer class="page-footer"><span>实心触点代表按下，淡出代表抬起。数字用于区分同一组手指。</span><a href="README.md">范围与说明</a></footer>
+</main>
+<dialog id="enlarged" aria-labelledby="modal-title"><div class="modal-heading"><div><div class="eyebrow">演示预览</div><h2 id="modal-title"></h2></div><button id="close-modal" class="icon-button" aria-label="关闭放大预览">×</button></div><div class="stage" id="modal-stage"></div><div class="modal-controls"><button id="modal-play" class="primary">暂停</button><button id="modal-replay" class="secondary">重播</button><span class="slow-tag">教学慢放</span></div></dialog>
+<script src="data.js"></script><script src="app.js"></script>
+</body>
+</html>

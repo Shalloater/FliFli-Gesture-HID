@@ -1,0 +1,8 @@
+<resources>
+    <string name="binding_edit_title">編輯動作</string>
+    <string name="binding_edit_hint">選擇觸發手勢及傳送訊號，點選完成儲存。</string>
+    <string name="binding_trigger">觸發手勢</string>
+    <string name="binding_choose_trigger">選擇觸發手勢</string>
+    <string name="binding_conflict">其他動作已使用此手勢，或點按區域與其他動作重疊。</string>
+    <string name="binding_missing">此動作已變更，請關閉後重新編輯。</string>
+</resources>
