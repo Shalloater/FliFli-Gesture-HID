@@ -1,6 +1,6 @@
 package com.example.joyvolumeremote;
 
-/** Largest centered 3:4 control area inside the vertical system-reserved edges. */
+/** Largest centered control area of the selected ratio inside system-reserved edges. */
 final class TouchArea {
     final int left, top, width, height;
     private TouchArea(int left, int top, int width, int height) {
@@ -8,13 +8,18 @@ final class TouchArea {
     }
 
     static TouchArea fit(int width, int height, int topInset, int bottomInset, boolean safe) {
+        return fit(width, height, topInset, bottomInset, safe, TouchAspectRatio.orDefault(null));
+    }
+
+    static TouchArea fit(int width, int height, int topInset, int bottomInset, boolean safe, TouchAspectRatio ratio) {
         width = Math.max(1, width); height = Math.max(1, height);
         if (!safe) return new TouchArea(0, 0, width, height);
         int top = Math.max(0, Math.min(topInset, height - 1));
         int bottom = Math.max(0, Math.min(bottomInset, height - top - 1));
         int availableHeight = Math.max(1, height - top - bottom);
-        int areaWidth = Math.max(1, Math.min(width, (int) ((long) availableHeight * 3 / 4)));
-        int areaHeight = Math.max(1, Math.min(availableHeight, Math.round(areaWidth * 4f / 3f)));
+        boolean heightLimited = availableHeight * ratio.value <= width;
+        int areaWidth = heightLimited ? Math.max(1, (int) Math.round(availableHeight * ratio.value)) : width;
+        int areaHeight = heightLimited ? availableHeight : Math.max(1, (int) Math.round(width / ratio.value));
         return new TouchArea((width - areaWidth) / 2, top + (availableHeight - areaHeight) / 2, areaWidth, areaHeight);
     }
 

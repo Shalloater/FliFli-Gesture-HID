@@ -12,5 +12,5 @@
     <string name="touch_pinning">Screen pinning protection</string>
     <string name="touch_pinning_hint">Optional Home protection. Entry prompts come from the system. Two-finger exit releases pinning started by this app. To stay unlocked afterward, disable the system setting that locks the device when unpinning, if available.</string>
     <string name="touch_safe_area">Safe touch area</string>
-    <string name="touch_safe_area_hint">Largest centered 3:4 area, mapped to the entire target screen. You can start outside the frame: touch begins at the boundary when your path enters. Taps outside do nothing.</string>
+    <string name="touch_safe_area_hint">Largest centered area at the selected screen ratio. A stroke can start outside: touch begins at the boundary when it enters. Taps outside do nothing.</string>
 </resources>

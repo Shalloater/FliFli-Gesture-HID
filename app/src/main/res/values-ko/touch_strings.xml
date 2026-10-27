@@ -12,5 +12,5 @@
     <string name="touch_pinning">화면 고정 보호</string>
     <string name="touch_pinning_hint">선택적인 Home 오작동 방지입니다. 진입 안내는 시스템에서 표시하며 두 손가락으로 나가면 이 앱이 시작한 고정을 해제합니다. 해제 후에도 잠금을 유지하지 않으려면 시스템에서 고정 해제 시 잠금 설정을 제공하는 경우 끄세요.</string>
     <string name="touch_safe_area">안전 터치 영역</string>
-    <string name="touch_safe_area_hint">안전 범위 안의 가장 큰 3:4 영역을 중앙에 표시하고 대상 화면 전체에 매핑합니다. 프레임 밖에서 시작해도 안으로 들어오는 경계부터 터치가 시작됩니다. 프레임 밖의 탭은 전달하지 않습니다.</string>
+    <string name="touch_safe_area_hint">선택한 비율로 시스템 안전 범위 안에서 최대 크기를 사용하며 대상 전체 화면에 대응합니다. 바깥에서 들어오면 경계부터 터치가 시작되고 바깥 탭은 무시됩니다。</string>
 </resources>

@@ -12,5 +12,5 @@
     <string name="touch_pinning">螢幕固定保護</string>
     <string name="touch_pinning_hint">可選的 Home 防誤觸保護；進入提示由系統顯示，雙指離開時解除本應用程式開啟的固定。若解除後鎖定螢幕，可在系統螢幕固定設定中關閉「解除固定時鎖定裝置」或「要求解鎖」（如系統提供）。</string>
     <string name="touch_safe_area">安全觸控區</string>
-    <string name="touch_safe_area_hint">系統安全範圍內最大的 3:4 區域，置中映射目標全螢幕。可從框外起滑，軌跡進入框內時才從邊界開始觸摸；框外點擊不生效。</string>
+    <string name="touch_safe_area_hint">依所選螢幕比例取系統安全範圍內的最大區域，置中映射目標全螢幕。可由框外起滑，進入時才從邊界開始觸摸；框外點擊不生效。</string>
 </resources>

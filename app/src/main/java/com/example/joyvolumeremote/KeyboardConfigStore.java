@@ -136,6 +136,7 @@ final class KeyboardConfigStore {
         config.vibrationLevel = object.optInt("vibrationLevel", VIBRATION_MEDIUM);
         config.screenPinning = object.optBoolean("screenPinning", false);
         config.safeTouchArea = object.optBoolean("safeTouchArea", KEYBOARD_TYPE_TOUCH_PASSTHROUGH.equals(config.type));
+        config.touchAspectRatio = object.optString("touchAspectRatio", TouchAspectRatio.DEFAULT);
 
         JSONArray bindingsArray = object.optJSONArray("bindings");
         if (bindingsArray != null) {
@@ -153,7 +154,7 @@ final class KeyboardConfigStore {
         return config;
     }
 
-    private JSONObject toJson(CustomKeyboardConfig config) {
+    static JSONObject toJson(CustomKeyboardConfig config) {
         JSONObject object = new JSONObject();
         try {
             object.put("id", config.id);
@@ -165,6 +166,7 @@ final class KeyboardConfigStore {
             object.put("vibrationLevel", config.vibrationLevel);
             object.put("screenPinning", config.screenPinning);
             object.put("safeTouchArea", config.safeTouchArea);
+            object.put("touchAspectRatio", config.touchAspectRatio);
             JSONArray bindingsArray = new JSONArray();
             for (GestureBinding binding : config.bindings) {
                 bindingsArray.put(toJson(binding));
@@ -188,7 +190,7 @@ final class KeyboardConfigStore {
         return binding;
     }
 
-    private JSONObject toJson(GestureBinding binding) {
+    private static JSONObject toJson(GestureBinding binding) {
         JSONObject object = new JSONObject();
         try {
             object.put("kind", binding.kind);
@@ -212,6 +214,7 @@ final class KeyboardConfigStore {
             config.controlMode = CONTROL_MODE_FULLSCREEN;
         }
         if (config.backgroundImageUri == null) config.backgroundImageUri = "";
+        config.touchAspectRatio = TouchAspectRatio.orDefault(config.touchAspectRatio).encode();
         if (config.vibrationLevel < VIBRATION_LIGHT || config.vibrationLevel > VIBRATION_STRONG) {
             config.vibrationLevel = VIBRATION_MEDIUM;
         }
@@ -414,6 +417,20 @@ final class KeyboardConfigStore {
             if (configs.get(i).id.equals(keyboardId)) configs.remove(i);
         }
         saveKeyboardConfigs(configs);
+    }
+
+    CustomKeyboardConfig importKeyboardConfig(CustomKeyboardConfig source) {
+        CustomKeyboardConfig imported = source.copy();
+        List<CustomKeyboardConfig> configs = loadKeyboardConfigs();
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (CustomKeyboardConfig config : configs) ids.add(config.id);
+        do { imported.id = allocateKeyboardId(); } while (ids.contains(imported.id) && preferences != null);
+        if (ids.contains(imported.id)) imported.id = "keyboard_" + java.util.UUID.randomUUID();
+        imported.backgroundImageUri = "";
+        normalizeKeyboardConfig(imported);
+        configs.add(imported.copy());
+        saveKeyboardConfigs(configs);
+        return imported;
     }
 
     private String keyboardTypeLabel(String type) {

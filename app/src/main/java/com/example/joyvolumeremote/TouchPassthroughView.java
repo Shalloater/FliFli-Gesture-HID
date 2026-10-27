@@ -23,6 +23,7 @@ final class TouchPassthroughView extends TouchBackgroundView {
     private int pointerId = -1;
     private float previousX, previousY;
     private boolean safeAreaEnabled;
+    private TouchAspectRatio aspectRatio = TouchAspectRatio.orDefault(null);
     private TouchArea area = TouchArea.fit(1, 1, 0, 0, false);
     private final RectF border = new RectF();
     private final Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -50,12 +51,17 @@ final class TouchPassthroughView extends TouchBackgroundView {
         updateArea();
     }
 
+    void setAspectRatio(String encoded) {
+        aspectRatio = TouchAspectRatio.orDefault(encoded);
+        updateArea();
+    }
+
     private void updateArea() {
         updateArea(SystemGestureProtection.reservedEdges(this));
     }
 
     private void updateArea(android.graphics.Rect reserved) {
-        TouchArea next = TouchArea.fit(getWidth(), getHeight(), reserved.top, reserved.bottom, safeAreaEnabled);
+        TouchArea next = TouchArea.fit(getWidth(), getHeight(), reserved.top, reserved.bottom, safeAreaEnabled, aspectRatio);
         if (area.left != next.left || area.top != next.top || area.width != next.width || area.height != next.height) {
             if (accepting) releaseTouches();
             area = next;

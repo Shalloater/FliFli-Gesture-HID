@@ -1,0 +1,35 @@
+<resources>
+    <string name="touch_ratio">画面の縦横比</string>
+    <string name="touch_ratio_hint">操作先の画面の幅 : 高さを設定します。安全タッチ領域は指定比率で最大化されます。安全領域がオフの場合はスマホの全画面を使います。</string>
+    <string name="touch_ratio_preview">幅 : 高さのイメージ</string>
+    <string name="touch_ratio_presets">よく使う比率</string>
+    <string name="touch_ratio_reader">電子書籍端末</string>
+    <string name="touch_ratio_tablet">タブレット / 画面</string>
+    <string name="touch_ratio_phone">スマホ / 縦長端末</string>
+    <string name="touch_ratio_square">正方形</string>
+    <string name="touch_ratio_custom">カスタム比率</string>
+    <string name="touch_ratio_width">幅</string>
+    <string name="touch_ratio_height">高さ</string>
+    <string name="touch_ratio_swap">幅と高さを入れ替え</string>
+    <string name="touch_ratio_error">幅と高さは 0.1～1000、比率は 1:10～10:1 にしてください。</string>
+    <string name="config_code">設定コード</string>
+    <string name="config_code_import">設定コードを読み込む</string>
+    <string name="config_code_import_short">読み込む</string>
+    <string name="config_code_export">設定コードを書き出す</string>
+    <string name="config_code_import_hint">コードを貼り付け、キーボードの内容を確認してから読み込みます。</string>
+    <string name="config_code_export_hint">このキーボードを別の端末にコピーします。ペアリング情報と背景画像は含まれません。</string>
+    <string name="config_code_close">閉じる</string>
+    <string name="config_code_copy">コードをコピー</string>
+    <string name="config_code_copied">設定コードをコピーしました</string>
+    <string name="config_code_input">完全な設定コードを貼り付け</string>
+    <string name="config_code_paste">貼り付け</string>
+    <string name="config_code_preview">内容を確認</string>
+    <string name="config_code_confirm">新しいキーボードとして追加</string>
+    <string name="config_code_add_new">既存のキーボードを上書きせず、新しく追加します。</string>
+    <string name="config_code_background">背景画像はこの端末で再選択してください。</string>
+    <string name="config_code_invalid">コードが無効、未対応のバージョン、ジェスチャーの重複、または未対応の信号です。コード全体をコピーしてください。</string>
+    <string name="config_code_export_error">書き出せません。名前とジェスチャーの信号を確認してください。</string>
+    <string name="config_code_clipboard_error">クリップボードに使用可能なテキストコードがありません。</string>
+    <string name="config_code_action_count">ジェスチャー %1$d 個</string>
+    <string name="config_code_imported">キーボードを読み込みました</string>
+</resources>

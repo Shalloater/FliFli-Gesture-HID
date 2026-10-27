@@ -1,0 +1,35 @@
+<resources>
+    <string name="touch_ratio">Screen ratio</string>
+    <string name="touch_ratio_hint">Width : height of the target screen. The safe touch area uses the largest available size at this ratio. With the safe area off, the full phone screen is used.</string>
+    <string name="touch_ratio_preview">Width : height preview</string>
+    <string name="touch_ratio_presets">Common ratios</string>
+    <string name="touch_ratio_reader">E-reader</string>
+    <string name="touch_ratio_tablet">Tablet / display</string>
+    <string name="touch_ratio_phone">Phone / tall reader</string>
+    <string name="touch_ratio_square">Square</string>
+    <string name="touch_ratio_custom">Custom ratio</string>
+    <string name="touch_ratio_width">Width</string>
+    <string name="touch_ratio_height">Height</string>
+    <string name="touch_ratio_swap">Swap width and height</string>
+    <string name="touch_ratio_error">Enter values from 0.1 to 1000. The ratio must be between 1:10 and 10:1.</string>
+    <string name="config_code">Configuration code</string>
+    <string name="config_code_import">Import configuration code</string>
+    <string name="config_code_import_short">Import</string>
+    <string name="config_code_export">Export configuration code</string>
+    <string name="config_code_import_hint">Paste a code to preview the keyboard, then confirm to add it.</string>
+    <string name="config_code_export_hint">Copy this keyboard to another device. Pairing data and background images are not included.</string>
+    <string name="config_code_close">Close</string>
+    <string name="config_code_copy">Copy code</string>
+    <string name="config_code_copied">Configuration code copied</string>
+    <string name="config_code_input">Paste the complete configuration code</string>
+    <string name="config_code_paste">Paste</string>
+    <string name="config_code_preview">Preview</string>
+    <string name="config_code_confirm">Import as new</string>
+    <string name="config_code_add_new">Adds a new keyboard without replacing existing keyboards.</string>
+    <string name="config_code_background">Choose the background image again on this device.</string>
+    <string name="config_code_invalid">Invalid or unsupported code, conflicting gestures, or unsupported signals. Check that you copied the entire code.</string>
+    <string name="config_code_export_error">This keyboard cannot be exported. Check its name and gesture signals.</string>
+    <string name="config_code_clipboard_error">The clipboard does not contain a usable text code.</string>
+    <string name="config_code_action_count">%1$d gesture actions</string>
+    <string name="config_code_imported">Keyboard imported</string>
+</resources>

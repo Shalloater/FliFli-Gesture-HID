@@ -1,0 +1,35 @@
+<resources>
+    <string name="touch_ratio">螢幕比例</string>
+    <string name="touch_ratio_hint">按受控螢幕目前方向設定寬 : 高。安全觸控區會依此比例取最大可用尺寸；關閉時使用手機全螢幕。</string>
+    <string name="touch_ratio_preview">寬 : 高示意</string>
+    <string name="touch_ratio_presets">常用比例</string>
+    <string name="touch_ratio_reader">閱讀器</string>
+    <string name="touch_ratio_tablet">平板 / 顯示器</string>
+    <string name="touch_ratio_phone">手機 / 長螢幕閱讀器</string>
+    <string name="touch_ratio_square">方形螢幕</string>
+    <string name="touch_ratio_custom">自訂比例</string>
+    <string name="touch_ratio_width">寬</string>
+    <string name="touch_ratio_height">高</string>
+    <string name="touch_ratio_swap">交換寬高</string>
+    <string name="touch_ratio_error">寬高請輸入 0.1～1000 的數值，比例須介於 1:10～10:1。</string>
+    <string name="config_code">設定碼</string>
+    <string name="config_code_import">匯入設定碼</string>
+    <string name="config_code_import_short">匯入</string>
+    <string name="config_code_export">匯出設定碼</string>
+    <string name="config_code_import_hint">貼上設定碼，先查看鍵盤資訊，再確認匯入。</string>
+    <string name="config_code_export_hint">複製此鍵盤至其他裝置，不包含藍牙配對資訊及背景圖片。</string>
+    <string name="config_code_close">關閉</string>
+    <string name="config_code_copy">複製設定碼</string>
+    <string name="config_code_copied">已複製設定碼</string>
+    <string name="config_code_input">貼上完整設定碼</string>
+    <string name="config_code_paste">貼上</string>
+    <string name="config_code_preview">查看設定</string>
+    <string name="config_code_confirm">匯入為新鍵盤</string>
+    <string name="config_code_add_new">將新增鍵盤，不會覆蓋現有鍵盤。</string>
+    <string name="config_code_background">請在目前裝置重新選擇背景圖片。</string>
+    <string name="config_code_invalid">設定碼無效、版本不支援、手勢衝突或訊號不支援，請確認已完整複製。</string>
+    <string name="config_code_export_error">無法匯出此鍵盤，請檢查名稱與手勢訊號設定。</string>
+    <string name="config_code_clipboard_error">剪貼簿沒有可用的文字設定碼。</string>
+    <string name="config_code_action_count">%1$d 個手勢動作</string>
+    <string name="config_code_imported">已匯入鍵盤</string>
+</resources>

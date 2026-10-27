@@ -1,0 +1,35 @@
+<resources>
+    <string name="touch_ratio">화면 비율</string>
+    <string name="touch_ratio_hint">대상 화면의 너비 : 높이를 설정하세요. 안전 터치 영역은 이 비율로 최대 크기를 사용합니다. 안전 영역을 끄면 휴대폰 전체 화면을 사용합니다.</string>
+    <string name="touch_ratio_preview">너비 : 높이 미리보기</string>
+    <string name="touch_ratio_presets">자주 쓰는 비율</string>
+    <string name="touch_ratio_reader">전자책 단말기</string>
+    <string name="touch_ratio_tablet">태블릿 / 화면</string>
+    <string name="touch_ratio_phone">휴대폰 / 긴 단말기</string>
+    <string name="touch_ratio_square">정사각형</string>
+    <string name="touch_ratio_custom">사용자 지정 비율</string>
+    <string name="touch_ratio_width">너비</string>
+    <string name="touch_ratio_height">높이</string>
+    <string name="touch_ratio_swap">너비와 높이 바꾸기</string>
+    <string name="touch_ratio_error">너비와 높이는 0.1~1000, 비율은 1:10~10:1 사이여야 합니다.</string>
+    <string name="config_code">설정 코드</string>
+    <string name="config_code_import">설정 코드 가져오기</string>
+    <string name="config_code_import_short">가져오기</string>
+    <string name="config_code_export">설정 코드 내보내기</string>
+    <string name="config_code_import_hint">코드를 붙여넣고 키보드 내용을 확인한 뒤 가져오세요.</string>
+    <string name="config_code_export_hint">이 키보드를 다른 기기로 복사합니다. 블루투스 페어링 정보와 배경 이미지는 포함되지 않습니다.</string>
+    <string name="config_code_close">닫기</string>
+    <string name="config_code_copy">코드 복사</string>
+    <string name="config_code_copied">설정 코드를 복사했습니다</string>
+    <string name="config_code_input">전체 설정 코드 붙여넣기</string>
+    <string name="config_code_paste">붙여넣기</string>
+    <string name="config_code_preview">설정 확인</string>
+    <string name="config_code_confirm">새 키보드로 가져오기</string>
+    <string name="config_code_add_new">기존 키보드를 덮어쓰지 않고 새로 추가합니다.</string>
+    <string name="config_code_background">이 기기에서 배경 이미지를 다시 선택하세요.</string>
+    <string name="config_code_invalid">잘못된 코드, 지원하지 않는 버전, 겹치는 제스처 또는 지원하지 않는 신호입니다. 코드 전체를 복사했는지 확인하세요.</string>
+    <string name="config_code_export_error">내보낼 수 없습니다. 이름과 제스처 신호 설정을 확인하세요.</string>
+    <string name="config_code_clipboard_error">클립보드에 사용할 수 있는 텍스트 코드가 없습니다.</string>
+    <string name="config_code_action_count">제스처 %1$d개</string>
+    <string name="config_code_imported">키보드를 가져왔습니다</string>
+</resources>

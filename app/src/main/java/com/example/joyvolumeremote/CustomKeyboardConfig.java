@@ -15,6 +15,7 @@ final class CustomKeyboardConfig {
     int vibrationLevel;
     boolean screenPinning;
     boolean safeTouchArea;
+    String touchAspectRatio = TouchAspectRatio.DEFAULT;
     final List<GestureBinding> bindings = new ArrayList<>();
 
     CustomKeyboardConfig copy() {
@@ -28,6 +29,7 @@ final class CustomKeyboardConfig {
         copy.vibrationLevel = vibrationLevel;
         copy.screenPinning = screenPinning;
         copy.safeTouchArea = safeTouchArea;
+        copy.touchAspectRatio = touchAspectRatio;
         for (GestureBinding binding : bindings) {
             copy.bindings.add(binding.copy());
         }

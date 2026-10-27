@@ -71,6 +71,7 @@ public class MainActivity extends Activity {
     private SignalPickerDialog signalPicker;
     private GestureBindingEditorDialog bindingEditor;
     private AlertDialog choiceDialog;
+    private KeyboardSettingsDialog keyboardOptionsDialog;
     private boolean serviceBound = false;
 
     private TextView connectionTitleView;
@@ -268,6 +269,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (keyboardOptionsDialog != null) keyboardOptionsDialog.dismiss();
         if (bindingEditor != null) bindingEditor.dismiss();
         if (gesturePreview != null) gesturePreview.dismiss();
         if (signalPicker != null) signalPicker.dismiss();
@@ -513,8 +515,12 @@ public class MainActivity extends Activity {
         heading.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         headerRow.addView(heading, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        TextView addButton = makeSmallTextButton(getString(R.string.ui_add), v -> showKeyboardTypePicker());
-        headerRow.addView(addButton, new LinearLayout.LayoutParams(-2, -2));
+        TextView importButton = makeHeaderActionButton(getString(R.string.config_code_import_short), false, v -> showKeyboardCodeImport());
+        headerRow.addView(importButton, new LinearLayout.LayoutParams(-2, -2));
+        TextView addButton = makeHeaderActionButton(getString(R.string.ui_add), true, v -> showKeyboardTypePicker());
+        LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(-2, -2);
+        addParams.leftMargin = dp(12);
+        headerRow.addView(addButton, addParams);
         keyboardsCard.addView(headerRow, new LinearLayout.LayoutParams(-1, -2));
 
         LinearLayout keyboardListWrap = new LinearLayout(this);
@@ -635,7 +641,10 @@ public class MainActivity extends Activity {
         types.add(new PickerItem(getString(R.string.touch_passthrough), getString(HidRemoteService.IS_BLE_COMPAT
                 ? R.string.signal_touch_ble : R.string.touch_type_hint), HidRemoteService.IS_BLE_COMPAT ? null : getString(R.string.ui_available),
                 IconView.ICON_GESTURE_KEYBOARD, appearance.accent(), !HidRemoteService.IS_BLE_COMPAT));
+        types.add(new PickerItem(getString(R.string.config_code_import), getString(R.string.config_code_add_new), null,
+                IconView.ICON_KEYBOARD, appearance.accent(), true));
         showStyledChoiceDialog(getString(R.string.ui_choose_keyboard_type), null, types, -1, which -> {
+            if (which == 3) { showKeyboardCodeImport(); return; }
             String type = KEYBOARD_TYPE_FULLSCREEN_GESTURE;
             if (which == 1) type = KEYBOARD_TYPE_COMPUTER;
             if (which == 2) type = KEYBOARD_TYPE_TOUCH_PASSTHROUGH;
@@ -781,6 +790,8 @@ public class MainActivity extends Activity {
                         draft.safeTouchArea = !draft.safeTouchArea;
                         showKeyboardEditor(draft, isNew);
                     }, true);
+            addConfigRow(touchList, getString(R.string.touch_ratio), TouchAspectRatio.orDefault(draft.touchAspectRatio).label(),
+                    null, v -> showTouchRatioPicker(draft, isNew), true);
             addConfigRow(touchList, getString(R.string.touch_pinning), getString(R.string.touch_pinning_hint),
                     getString(draft.screenPinning ? R.string.ui_on : R.string.ui_off), v -> {
                         draft.screenPinning = !draft.screenPinning;
@@ -808,6 +819,14 @@ public class MainActivity extends Activity {
             content.addView(layoutCard, layoutParams);
         }
 
+        LinearLayout shareCard = createCardLayout(dp(24), 0);
+        shareCard.setOrientation(LinearLayout.VERTICAL); shareCard.setPadding(dp(14), dp(14), dp(14), dp(14));
+        addCardHeading(shareCard, getString(R.string.config_code));
+        LinearLayout shareList = makeInnerList();
+        addConfigRow(shareList, getString(R.string.config_code_export), getString(R.string.config_code_export_hint), null,
+                v -> showKeyboardCodeExport(draft), false);
+        shareCard.addView(shareList, makeInnerListParams()); content.addView(shareCard, spacedParams());
+
         TextView saveButton = makePrimaryTextButton(getString(R.string.ui_done), v -> finishKeyboardEditor(draft));
         LinearLayout.LayoutParams saveParams = new LinearLayout.LayoutParams(-1, -2);
         saveParams.bottomMargin = dp(10);
@@ -830,6 +849,31 @@ public class MainActivity extends Activity {
             });
         }
         setContentView(scaffold);
+    }
+
+    private void showKeyboardOptions(KeyboardSettingsDialog dialog) {
+        if (keyboardOptionsDialog != null) keyboardOptionsDialog.dismiss();
+        keyboardOptionsDialog = dialog;
+        dialog.setOnDismissListener(d -> { if (keyboardOptionsDialog == dialog) keyboardOptionsDialog = null; });
+        dialog.show();
+    }
+
+    private void showTouchRatioPicker(CustomKeyboardConfig draft, boolean isNew) {
+        showKeyboardOptions(new TouchRatioPickerDialog(this, appearance, draft.touchAspectRatio, ratio -> {
+            draft.touchAspectRatio = ratio; showKeyboardEditor(draft, isNew);
+        }));
+    }
+
+    private void showKeyboardCodeExport(CustomKeyboardConfig draft) {
+        showKeyboardOptions(new KeyboardCodeDialog(this, appearance, draft, null));
+    }
+
+    private void showKeyboardCodeImport() {
+        showKeyboardOptions(new KeyboardCodeDialog(this, appearance, null, config -> {
+            CustomKeyboardConfig imported = keyboardStore.importKeyboardConfig(config);
+            showKeyboardEditor(imported, false);
+            Toast.makeText(this, R.string.config_code_imported, Toast.LENGTH_SHORT).show();
+        }));
     }
 
     private void showTouchOrientationPicker(CustomKeyboardConfig draft, boolean isNew) {
@@ -1435,6 +1479,7 @@ public class MainActivity extends Activity {
             TouchPassthroughView surface = new TouchPassthroughView(this, appearance.primary(), activeKeyboardConfig.vibrationEnabled,
                     activeKeyboardConfig.vibrationLevel);
             touchSurface = surface;
+            surface.setAspectRatio(activeKeyboardConfig.touchAspectRatio);
             surface.setSafeAreaEnabled(activeKeyboardConfig.safeTouchArea);
             surface.setBackgroundImageUri(activeKeyboardConfig.backgroundImageUri);
             surface.setListener(report -> {
@@ -1641,6 +1686,32 @@ public class MainActivity extends Activity {
         button.setBackground(roundedRect(appearance.tint(), dp(14), appearance.tint(), 1));
         button.setOnClickListener(listener);
         makeInteractive(button);
+        return button;
+    }
+
+    private TextView makeHeaderActionButton(String text, boolean primary, View.OnClickListener listener) {
+        TextView button = makeSmallTextButton(text, listener);
+        button.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        button.setIncludeFontPadding(false);
+        button.setSingleLine(true);
+        int fill = primary ? appearance.primary() : Color.WHITE;
+        android.graphics.drawable.RippleDrawable face = new android.graphics.drawable.RippleDrawable(
+                android.content.res.ColorStateList.valueOf(appearance.tint()),
+                roundedRect(fill, dp(10), appearance.primary(), dp(1)),
+                roundedRect(Color.WHITE, dp(10), Color.WHITE, 0));
+        // Keep a 48dp hit area around the compact face without overlapping the adjacent action.
+        button.setBackground(new android.graphics.drawable.InsetDrawable(face, 0, dp(8), 0, dp(8)));
+        if (Build.VERSION.SDK_INT >= 23) button.setForeground(null);
+        button.setPadding(dp(12), 0, dp(12), 0);
+        button.setMinWidth(dp(56));
+        android.graphics.Paint.FontMetrics metrics = button.getPaint().getFontMetrics();
+        button.setMinimumHeight(Math.max(dp(48), (int) Math.ceil(metrics.descent - metrics.ascent) + dp(28)));
+        button.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+            @Override public void onInitializeAccessibilityNodeInfo(View host, android.view.accessibility.AccessibilityNodeInfo info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                info.setClassName("android.widget.Button");
+            }
+        });
         return button;
     }
 

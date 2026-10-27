@@ -1,0 +1,35 @@
+<resources>
+    <string name="touch_ratio">屏幕比例</string>
+    <string name="touch_ratio_hint">按受控屏幕当前方向设置宽 : 高。安全触控区会按此比例取最大可用尺寸；关闭安全触控区时使用手机全屏。</string>
+    <string name="touch_ratio_preview">宽 : 高示意</string>
+    <string name="touch_ratio_presets">常用比例</string>
+    <string name="touch_ratio_reader">阅读器</string>
+    <string name="touch_ratio_tablet">平板 / 显示器</string>
+    <string name="touch_ratio_phone">手机 / 长屏阅读器</string>
+    <string name="touch_ratio_square">方形屏</string>
+    <string name="touch_ratio_custom">自定义比例</string>
+    <string name="touch_ratio_width">宽</string>
+    <string name="touch_ratio_height">高</string>
+    <string name="touch_ratio_swap">交换宽高</string>
+    <string name="touch_ratio_error">宽高请输入 0.1～1000 的数值，比例需在 1:10～10:1 之间。</string>
+    <string name="config_code">配置码</string>
+    <string name="config_code_import">导入配置码</string>
+    <string name="config_code_import_short">导入</string>
+    <string name="config_code_export">导出配置码</string>
+    <string name="config_code_import_hint">粘贴配置码，先查看键盘信息，再确认导入。</string>
+    <string name="config_code_export_hint">复制此键盘到其他设备，不包含蓝牙配对信息和背景图片。</string>
+    <string name="config_code_close">关闭</string>
+    <string name="config_code_copy">复制配置码</string>
+    <string name="config_code_copied">配置码已复制</string>
+    <string name="config_code_input">粘贴完整配置码</string>
+    <string name="config_code_paste">粘贴</string>
+    <string name="config_code_preview">查看配置</string>
+    <string name="config_code_confirm">导入为新键盘</string>
+    <string name="config_code_add_new">将添加为新键盘，不会覆盖已有键盘。</string>
+    <string name="config_code_background">请在当前设备上重新选择背景图片。</string>
+    <string name="config_code_invalid">配置码无效、版本不支持、手势有冲突或信号不受支持，请检查是否完整复制。</string>
+    <string name="config_code_export_error">无法导出此键盘，请检查名称和手势信号设置。</string>
+    <string name="config_code_clipboard_error">剪贴板中没有可用的文字配置码。</string>
+    <string name="config_code_action_count">%1$d 个手势动作</string>
+    <string name="config_code_imported">键盘已导入</string>
+</resources>

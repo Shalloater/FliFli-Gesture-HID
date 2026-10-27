@@ -12,5 +12,5 @@
     <string name="touch_pinning">画面固定保護</string>
     <string name="touch_pinning_hint">任意のHome誤操作防止です。開始時の案内はシステムが表示し、2本指で終了するとこのアプリが開始した固定を解除します。解除後もロックしない場合は、システムに解除時のロック設定があればオフにしてください。</string>
     <string name="touch_safe_area">安全タッチ領域</string>
-    <string name="touch_safe_area_hint">安全範囲内で最大の3:4領域を中央に表示し、接続先の画面全体に対応させます。枠外から滑らせると、枠に入った境界でタッチが始まります。枠外のタップは送信しません。</string>
+    <string name="touch_safe_area_hint">選択した比率でシステムの安全範囲内を最大化し、操作先の全画面に対応します。枠外から滑らせると境界からタッチが始まります。枠外のタップは無効です。</string>
 </resources>
